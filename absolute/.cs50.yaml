@@ -1,0 +1,33 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require absolute.cpp
+  checks:
+    test1:
+      - run: g++ absolute.cpp -o absolute && ./absolute
+        stdin: "4 7"
+        stdout: "3"
+        exit: 0
+    test2: 
+      - run: g++ absolute.cpp -o absolute && ./absolute
+        stdin: "9 2"
+        stdout: "7"
+        exit: 0
+    test3:
+      - run: g++ absolute.cpp -o absolute && ./absolute
+        stdin: "5 5"
+        stdout: "0"
+        exit: 0
+    test4:
+      - run: g++ absolute.cpp -o absolute && ./absolute
+        stdin: "1000000 999999"
+        stdout: "1"
+        exit: 0
+    test5:
+      - run: g++ absolute.cpp -o absolute && ./absolute
+        stdin: "1000000 1000000"
+        stdout: "0"
+        exit: 0 
+        
+submit50:
+  files: *check50_files
