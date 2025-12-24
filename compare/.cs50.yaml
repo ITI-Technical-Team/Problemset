@@ -1,0 +1,48 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require compare.cpp
+  checks:
+    test1:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "5 1"
+        stdout: "Greater"
+        exit: 0
+    test2:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "5 5"
+        stdout: "Equal"
+        exit: 0
+    test3:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "4 9"
+        stdout: "Less"
+        exit: 0
+    test4:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "0 0"
+        stdout: "Equal"
+        exit: 0
+    test5:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "-1 1"
+        stdout: "Less"
+        exit: 0
+    test6:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "-5 -5"
+        stdout: "Equal"
+        exit: 0
+    test7:    
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "-10 -20"
+        stdout: "Greater"
+        exit: 0
+    test8:
+      - run: g++ compare.cpp -o compare && ./compare
+        stdin: "100 50"
+        stdout: "Greater"
+        exit: 0
+
+submit50:
+  files: *check50_files
