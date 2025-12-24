@@ -1,0 +1,32 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require equation.cpp
+  checks:
+    test1:
+      - run: g++ equation.cpp -o equation && ./equation
+        stdin: "4 2 5 3"
+        stdout: "10"
+        exit: 0
+    test2:
+      - run: g++ equation.cpp -o equation && ./equation
+        stdin: "1 1 1 1"
+        stdout: "1"
+        exit: 0
+    test3:
+      - run: g++ equation.cpp -o equation && ./equation
+        stdin: "0 0 0 0"
+        stdout: "0"
+        exit: 0
+    test4:
+      - run: g++ equation.cpp -o equation && ./equation
+        stdin: "10 5 2 1"
+        stdout: "51"
+        exit: 0
+    test5:
+      - run: g++ equation.cpp -o equation && ./equation
+        stdin: "3 2 1 0"
+        stdout: "7"
+        exit: 0
+submit50:
+  files: *check50_files
