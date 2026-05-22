@@ -1,0 +1,53 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require operations.cpp
+  checks:
+    test1:
+      - run: g++ operations.cpp -o operations && ./operations
+        stdin: "5 3"
+        stdout:
+          - "8"
+          - "2"
+          - "15"
+          - "1"
+        exit: 0
+    test2:
+      - run: g++ operations.cpp -o operations && ./operations
+        stdin: "10 4"
+        stdout:
+          - "14"
+          - "6"
+          - "40"
+          - "2"
+        exit: 0
+    test3:
+      - run: g++ operations.cpp -o operations && ./operations
+        stdin: "1 1"
+        stdout:
+          - "2"
+          - "0"
+          - "1"
+          - "1"
+        exit: 0
+    test4:
+      - run: g++ operations.cpp -o operations && ./operations
+        stdin: "5 5"
+        stdout:
+          - "10"
+          - "0"
+          - "25"
+          - "1"
+        exit: 0
+    test5:
+      - run: g++ operations.cpp -o operations && ./operations
+        stdin: "100000000 100000000"
+        stdout:
+          - "200000000"
+          - "0"
+          - "10000000000000000"
+          - "1"
+        exit: 0
+
+submit50:
+  files: *check50_files
