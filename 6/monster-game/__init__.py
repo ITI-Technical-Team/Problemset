@@ -24,3 +24,8 @@ def test_defeat_none():
 def test_strict_greater():
     """handles strict inequality rule properly (must be strictly greater health)"""
     check50.run("g++ monster-game.cpp -o monster-game && ./monster-game").stdin("10\n3\n9 10 11", prompt=False).stdout("1", regex=False).exit(0)
+
+@check50.check(exists)
+def test_mixed_longer():
+    """handles a longer list with mixed values"""
+    check50.run("g++ monster-game.cpp -o monster-game && ./monster-game").stdin("12\n8\n11 5 13 7 12 3 1 20", prompt=False).stdout("4", regex=False).exit(0)

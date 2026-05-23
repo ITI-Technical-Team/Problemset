@@ -24,3 +24,8 @@ def test_reverse_sorted():
 def test_negatives():
     """handles arrays with negative values and zeroes"""
     check50.run("g++ insertion-sort.cpp -o insertion-sort && ./insertion-sort").stdin("5\n-1 -5 0 5 1", prompt=False).stdout("-5 -1 0 1 5", regex=False).exit(0)
+
+@check50.check(exists)
+def test_mixed_longer():
+    """handles a longer mixed array with duplicates"""
+    check50.run("g++ insertion-sort.cpp -o insertion-sort && ./insertion-sort").stdin("10\n8 3 3 -2 7 0 5 -2 9 1", prompt=False).stdout("-2 -2 0 1 3 3 5 7 8 9", regex=False).exit(0)

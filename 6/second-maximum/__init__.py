@@ -24,3 +24,8 @@ def test_negatives():
 def test_duplicates():
     """handles arrays with duplicate maximum values"""
     check50.run("g++ second-maximum.cpp -o second-maximum && ./second-maximum").stdin("5\n10 10 9 8 7", prompt=False).stdout("9", regex=False).exit(0)
+
+@check50.check(exists)
+def test_mixed():
+    """handles mixed values with repeated max"""
+    check50.run("g++ second-maximum.cpp -o second-maximum && ./second-maximum").stdin("8\n-3 15 15 2 9 0 7 -1", prompt=False).stdout("9", regex=False).exit(0)

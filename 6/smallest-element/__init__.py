@@ -24,3 +24,8 @@ def test_k1():
 def test_kN():
     """handles k = N (absolute largest)"""
     check50.run("g++ smallest-element.cpp -o smallest-element && ./smallest-element").stdin("4 4\n8 9 7 6", prompt=False).stdout("9", regex=False).exit(0)
+
+@check50.check(exists)
+def test_mid_with_duplicates():
+    """handles mid-k with duplicates"""
+    check50.run("g++ smallest-element.cpp -o smallest-element && ./smallest-element").stdin("7 4\n5 1 3 3 2 9 5", prompt=False).stdout("3", regex=False).exit(0)

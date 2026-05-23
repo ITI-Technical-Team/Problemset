@@ -24,3 +24,8 @@ def test_duplicates():
 def test_negatives():
     """handles arrays with negative values"""
     check50.run("g++ minimum-difference.cpp -o minimum-difference && ./minimum-difference").stdin("4\n-10 -5 0 5", prompt=False).stdout("5", regex=False).exit(0)
+
+@check50.check(exists)
+def test_mixed_longer():
+    """handles longer mixed arrays"""
+    check50.run("g++ minimum-difference.cpp -o minimum-difference && ./minimum-difference").stdin("10\n15 3 27 8 9 30 21 22 5 100", prompt=False).stdout("1", regex=False).exit(0)
