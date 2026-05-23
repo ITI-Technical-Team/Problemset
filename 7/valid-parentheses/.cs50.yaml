@@ -1,7 +1,8 @@
 check50:
-files: &check50_files
-- !exclude "*"
-- !require valid-parentheses.cpp
+  checks: __init__.py
+  files: &check50_files
+    - !exclude "*"
+    - !require valid-parentheses.cpp
 
 submit50:
-files: *check50_files
+  files: *check50_files
