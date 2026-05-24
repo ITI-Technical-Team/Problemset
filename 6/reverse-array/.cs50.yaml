@@ -1,7 +1,7 @@
 check50:
-files: &check50_files
-- !exclude "*"
-- !require reverse-array.cpp
+  files: &check50_files
+    - !exclude "*"
+    - !require reverse-array.cpp
 
 submit50:
-files: *check50_files
+  files: *check50_files
