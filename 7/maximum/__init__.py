@@ -30,3 +30,9 @@ def test_mixed_divisors():
     """handles a mixed array with several divisors"""
     # max = 12. Divisors: 6, 3, 2, 1, 12 (5 elements)
     check50.run("./maximum").stdin("6\n6 3 2 1 12 7", prompt=False).stdout("5", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_n_1():
+    """handles minimal array size N = 1"""
+    check50.run("./maximum").stdin("1\n999", prompt=False).stdout("1", regex=False).exit(0)
+

@@ -29,3 +29,9 @@ def test_mixed_cases():
 def test_longer():
     """handles longer sequences"""
     check50.run("./valid-parentheses").stdin("2\n((((()))))(()())\n())(()", prompt=False).stdout("YES\nNO", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_minimal_size():
+    """handles minimal parenthesized strings of length 1"""
+    check50.run("./valid-parentheses").stdin("2\n(\n)", prompt=False).stdout("NO\nNO", regex=False).exit(0)
+

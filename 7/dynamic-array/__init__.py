@@ -29,3 +29,9 @@ def test_duplicates():
 def test_longer_mixed():
     """handles longer mixed sequence"""
     check50.run("./dynamic-array").stdin("8\n1000000000\n1\n999\n5\n12\n12\n7\n2\n-1", prompt=False).stdout("8 1000000000 1 999 5 12 12 7 2", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_immediate_sentinel():
+    """handles empty input sequence (sentinel at start)"""
+    check50.run("./dynamic-array").stdin("-1", prompt=False).stdout("", regex=False).exit(0)
+
