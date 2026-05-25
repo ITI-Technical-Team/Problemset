@@ -34,3 +34,14 @@ def test_first_element():
 def test_last_element():
     """finds target at last index -> 4"""
     check50.run("./linear-search").stdin("5\n1 2 3 4 9\n9", prompt=False).stdout("4", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_n_1_match():
+    """handles minimal size N = 1 with a match"""
+    check50.run("./linear-search").stdin("1\n99\n99", prompt=False).stdout("0", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_n_1_mismatch():
+    """handles minimal size N = 1 with no match"""
+    check50.run("./linear-search").stdin("1\n99\n10", prompt=False).stdout("-1", regex=False).exit(0)
+

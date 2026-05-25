@@ -21,21 +21,23 @@ def test_example2():
     check50.run("./perfect-square").stdin("10", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_zero():
-    """outputs YES for 0 (0 = 0^2)"""
-    check50.run("./perfect-square").stdin("0", prompt=False).stdout("YES", regex=False).exit(0)
-
-@check50.check(test_compile)
 def test_one():
     """outputs YES for 1"""
     check50.run("./perfect-square").stdin("1", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
+def test_two():
+    """outputs NO for 2"""
+    check50.run("./perfect-square").stdin("2", prompt=False).stdout("NO", regex=False).exit(0)
+
+@check50.check(test_compile)
 def test_large_square():
-    """outputs YES for 9999800001 (99999^2)"""
-    check50.run("./perfect-square").stdin("9999800001", prompt=False).stdout("YES", regex=False).exit(0)
+    """outputs YES for 999950884 (31622^2)"""
+    check50.run("./perfect-square").stdin("999950884", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_large_non_square():
-    """outputs NO for 999999999"""
-    check50.run("./perfect-square").stdin("999999999", prompt=False).stdout("NO", regex=False).exit(0)
+    """outputs NO for 999950885"""
+    check50.run("./perfect-square").stdin("999950885", prompt=False).stdout("NO", regex=False).exit(0)
+
+

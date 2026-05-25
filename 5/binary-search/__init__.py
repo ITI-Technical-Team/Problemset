@@ -35,3 +35,12 @@ def test_efficiency():
     # 'timeout 2' enforces a strict 2-second wall-clock limit on the student binary.
     # Exit code 124 means the process was killed -> check50 sees a non-zero exit.
     check50.run("timeout 2 ./binary-search < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_edge_cases():
+    """handles multiple binary search boundary edge cases"""
+    # 1. N=1, Q=2 (found and missing)
+    # 2. Target smaller than first element, larger than last element, at first, and at last element
+    check50.run("./binary-search").stdin("1 2\n5\n5\n3", prompt=False).stdout("YES\nNO", regex=False).exit(0)
+    check50.run("./binary-search").stdin("5 4\n10 20 30 40 50\n5\n55\n10\n50", prompt=False).stdout("NO\nNO\nYES\nYES", regex=False).exit(0)
+
