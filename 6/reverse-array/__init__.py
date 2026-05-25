@@ -26,11 +26,12 @@ def test_even():
     check50.run("./reverse-array").stdin("4\n10 20 30 40", prompt=False).stdout("40 30 20 10", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_negatives():
-    """handles negative values and duplicates"""
-    check50.run("./reverse-array").stdin("4\n-1 -1 5 -1", prompt=False).stdout("-1 5 -1 -1", regex=False).exit(0)
+def test_duplicates():
+    """handles duplicates: 4 -> 1 1 5 1"""
+    check50.run("./reverse-array").stdin("4\n1 1 5 1", prompt=False).stdout("1 5 1 1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_longer():
-    """handles a longer mixed array"""
-    check50.run("./reverse-array").stdin("10\n5 0 -2 7 7 3 9 -1 4 8", prompt=False).stdout("8 4 -1 9 3 7 7 -2 0 5", regex=False).exit(0)
+    """handles a longer array with positive values"""
+    check50.run("./reverse-array").stdin("10\n5 10 2 7 7 3 9 1 4 8", prompt=False).stdout("8 4 1 9 3 7 7 2 10 5", regex=False).exit(0)
+

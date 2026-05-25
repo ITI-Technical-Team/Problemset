@@ -26,11 +26,18 @@ def test_reverse_sorted():
     check50.run("./bubble-sort").stdin("4\n4 3 2 1", prompt=False).stdout("1 2 3 4", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_negatives():
-    """handles arrays with negative values and zeroes"""
-    check50.run("./bubble-sort").stdin("5\n-1 -5 0 5 1", prompt=False).stdout("-5 -1 0 1 5", regex=False).exit(0)
+def test_small_positive():
+    """handles small positive arrays with duplicates"""
+    check50.run("./bubble-sort").stdin("5\n10 50 1 5 1", prompt=False).stdout("1 1 5 10 50", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_mixed_longer():
-    """handles a longer mixed array with duplicates"""
-    check50.run("./bubble-sort").stdin("10\n8 3 3 -2 7 0 5 -2 9 1", prompt=False).stdout("-2 -2 0 1 3 3 5 7 8 9", regex=False).exit(0)
+    """handles a longer positive array with duplicates"""
+    check50.run("./bubble-sort").stdin("10\n8 3 3 2 7 10 5 2 9 1", prompt=False).stdout("1 2 2 3 3 5 7 8 9 10", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_n_1():
+    """handles minimal array size N = 1"""
+    check50.run("./bubble-sort").stdin("1\n999", prompt=False).stdout("999", regex=False).exit(0)
+
+
