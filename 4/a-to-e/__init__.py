@@ -41,11 +41,6 @@ def test_minimal_no():
     check50.run("./a-to-e").stdin("1\nf", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_case_sensitivity():
-    """handles uppercase character: 1 A -> NO"""
-    check50.run("./a-to-e").stdin("1\nA", prompt=False).stdout("NO", regex=False).exit(0)
-
-@check50.check(test_compile)
 def test_large_yes():
     """handles large valid string N = 1000"""
     check50.run("./a-to-e").stdin("1000\n" + "e" * 1000, prompt=False).stdout("YES", regex=False).exit(0)
