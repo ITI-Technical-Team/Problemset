@@ -17,8 +17,8 @@ def test_example1():
 
 @check50.check(test_compile)
 def test_example2():
-    """outputs NO for itics50"""
-    check50.run("./palindrome").stdin("itics50", prompt=False).stdout("NO", regex=False).exit(0)
+    """outputs NO for newcomers"""
+    check50.run("./palindrome").stdin("newcomers", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_example3():
