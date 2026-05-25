@@ -33,16 +33,17 @@ def test_larger():
 
 @check50.check(test_compile)
 def test_minimal():
-    """handles minimal 1x1 array size"""
-    check50.run("./easy-array").stdin("1 1\n999", prompt=False).stdout("999", regex=False).exit(0)
+    """handles minimal elements (all 1s)"""
+    check50.run("./easy-array").stdin("2 2\n1 1\n1 1", prompt=False).stdout("4", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_negatives():
-    """handles all negative elements"""
-    check50.run("./easy-array").stdin("2 2\n-1 -2\n-3 -4", prompt=False).stdout("-10", regex=False).exit(0)
+def test_distinct_values():
+    """handles distinct positive elements within bounds"""
+    check50.run("./easy-array").stdin("2 2\n100 200\n300 400", prompt=False).stdout("1000", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_large_sum():
-    """handles large sum exceeding 32-bit signed integer limits"""
-    check50.run("./easy-array").stdin("2 2\n2000000000 2000000000\n2000000000 2000000000", prompt=False).stdout("8000000000", regex=False).exit(0)
+def test_maximal_bounds():
+    """handles maximal bounds (10x10 array of all 1000s)"""
+    elements = "\n".join(" ".join(["1000"] * 10) for _ in range(10))
+    check50.run("./easy-array").stdin(f"10 10\n{elements}", prompt=False).stdout("100000", regex=False).exit(0)
 

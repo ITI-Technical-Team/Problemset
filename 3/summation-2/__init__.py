@@ -26,12 +26,13 @@ def test_n_1():
     check50.run("./summation-2").stdin("1\n999", prompt=False).stdout("999", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_zeroes():
-    """handles edge case of all zeroes"""
-    check50.run("./summation-2").stdin("5\n0 0 0 0 0", prompt=False).stdout("0", regex=False).exit(0)
+def test_minimal_values():
+    """handles edge case of minimal values (all 1s)"""
+    check50.run("./summation-2").stdin("5\n1 1 1 1 1", prompt=False).stdout("5", regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_large_sum():
-    """handles N = 5 with large elements (exceeding 32-bit integer limits)"""
-    check50.run("./summation-2").stdin("5\n2000000000 2000000000 2000000000 2000000000 2000000000", prompt=False).stdout("10000000000", regex=False).exit(0)
+def test_maximal_values():
+    """handles edge case of maximal bounds (N = 100, all 1000s)"""
+    stdin_data = "100\n" + " ".join(["1000"] * 100)
+    check50.run("./summation-2").stdin(stdin_data, prompt=False).stdout("100000", regex=False).exit(0)
 

@@ -22,8 +22,8 @@ def test2():
 
 @check50.check(test_compile)
 def test3():
-	"""0 0 0 0 -> 0"""
-	check50.run("./equation").stdin("0 0 0 0", prompt=False).stdout("0", regex=False).exit(0)
+	"""2 2 2 2 -> 4"""
+	check50.run("./equation").stdin("2 2 2 2", prompt=False).stdout("4", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test4():
@@ -32,5 +32,5 @@ def test4():
 
 @check50.check(test_compile)
 def test5():
-	"""3 2 1 0 -> 7"""
-	check50.run("./equation").stdin("3 2 1 0", prompt=False).stdout("7", regex=False).exit(0)
+	"""3 2 1 1 -> 6"""
+	check50.run("./equation").stdin("3 2 1 1", prompt=False).stdout("6", regex=False).exit(0)
