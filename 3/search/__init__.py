@@ -43,6 +43,6 @@ def test_n_1():
 @check50.check(test_compile)
 def test_n_1000():
     """handles N = 1000 with target at the very end"""
-    stdin_data = "1000 99999\n" + " ".join(str(i) for i in range(999)) + " 99999"
+    stdin_data = "1000 99999\n" + " ".join(str(i) for i in range(1, 1000)) + " 99999"
     check50.run("./search").stdin(stdin_data, prompt=False).stdout("999", regex=False).exit(0)
 
