@@ -7,7 +7,9 @@ import scratch_helper
 @check50.check()
 def exists():
     """project.sb3 exists"""
-    check50.exists("*.sb3")
+    import glob
+    if not glob.glob("*.sb3"):
+        raise check50.Failure("No .sb3 file found.")
 
 @check50.check(exists)
 def test_requirements():
