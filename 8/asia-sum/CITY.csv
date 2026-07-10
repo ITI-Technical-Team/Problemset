@@ -1,0 +1,81 @@
+ID,NAME,COUNTRYCODE,DISTRICT,POPULATION
+1,Cairo,EGY,Cairo Governorate,9908000
+2,Alexandria,EGY,Alexandria Governorate,5200000
+3,Giza,EGY,Giza Governorate,3628000
+4,Lagos,NGA,Lagos State,14368332
+5,Kano,NGA,Kano State,3626068
+6,Ibadan,NGA,Oyo State,3565108
+7,Johannesburg,ZAF,Gauteng,5635127
+8,Cape Town,ZAF,Western Cape,4618000
+9,Durban,ZAF,KwaZulu-Natal,3720098
+10,Addis Ababa,ETH,Addis Ababa,3384569
+11,Nairobi,KEN,Nairobi County,4397073
+12,Mombasa,KEN,Mombasa County,1208333
+13,Accra,GHA,Greater Accra,2277000
+14,Kumasi,GHA,Ashanti,3478200
+15,Shanghai,CHN,Shanghai,24183300
+16,Beijing,CHN,Beijing,21707000
+17,Chengdu,CHN,Sichuan,9059800
+18,Guangzhou,CHN,Guangdong,13501100
+19,Shenzhen,CHN,Guangdong,12528300
+20,Mumbai,IND,Maharashtra,20667656
+21,Delhi,IND,Delhi,29617000
+22,Kolkata,IND,West Bengal,14850000
+23,Chennai,IND,Tamil Nadu,10971108
+24,Bangalore,IND,Karnataka,12476000
+25,Tokyo,JPN,Tokyo,13960000
+26,Osaka,JPN,Osaka,2691185
+27,Nagoya,JPN,Aichi,2295638
+28,Jakarta,IDN,Jakarta,10562088
+29,Surabaya,IDN,East Java,2847000
+30,Bandung,IDN,West Java,2575478
+31,Karachi,PAK,Sindh,14916456
+32,Lahore,PAK,Punjab,11126285
+33,Islamabad,PAK,Islamabad Capital,1014825
+34,Dhaka,BGD,Dhaka Division,8906035
+35,Bangkok,THA,Bangkok,10723000
+36,Ho Chi Minh City,VNM,Ho Chi Minh,8993082
+37,Hanoi,VNM,Hanoi,8054000
+38,Riyadh,SAU,Riyadh,7676654
+39,Jeddah,SAU,Makkah,4697000
+40,Ankara,TUR,Ankara,5700000
+41,Istanbul,TUR,Istanbul,15462452
+42,Tehran,IRN,Tehran Province,9259009
+43,Berlin,DEU,Berlin,3769495
+44,Hamburg,DEU,Hamburg,1841179
+45,Munich,DEU,Bavaria,1471508
+46,Paris,FRA,Ile-de-France,2161000
+47,Marseille,FRA,Provence-Alpes,861635
+48,London,GBR,England,8982000
+49,Birmingham,GBR,England,1141374
+50,Rome,ITA,Lazio,2872800
+51,Milan,ITA,Lombardy,1369000
+52,Madrid,ESP,Community of Madrid,3305408
+53,Barcelona,ESP,Catalonia,1636762
+54,Warsaw,POL,Masovian Voivodeship,1793579
+55,Amsterdam,NLD,North Holland,921402
+56,Brussels,BEL,Brussels-Capital,1212352
+57,New York,USA,New York,8336817
+58,Los Angeles,USA,California,3979576
+59,Chicago,USA,Illinois,2693976
+60,Houston,USA,Texas,2304580
+61,Toronto,CAN,Ontario,2930000
+62,Vancouver,CAN,British Columbia,675218
+63,Mexico City,MEX,Mexico City,9209944
+64,Guadalajara,MEX,Jalisco,1495182
+65,Havana,CUB,La Habana,2135498
+66,Guatemala City,GTM,Guatemala Department,3015081
+67,Sao Paulo,BRA,Sao Paulo,12325232
+68,Rio de Janeiro,BRA,Rio de Janeiro,6747815
+69,Buenos Aires,ARG,Buenos Aires,2890151
+70,Cordoba,ARG,Cordoba,1329604
+71,Bogota,COL,Bogota D.C.,7412566
+72,Medellin,COL,Antioquia,2529403
+73,Lima,PER,Lima,10555000
+74,Arequipa,PER,Arequipa,1008290
+75,Santiago,CHL,Santiago Metropolitan,6269374
+76,Sydney,AUS,New South Wales,5312000
+77,Melbourne,AUS,Victoria,5078193
+78,Brisbane,AUS,Queensland,2514184
+79,Auckland,NZL,Auckland,1657200
+80,Port Moresby,PNG,National Capital,370900

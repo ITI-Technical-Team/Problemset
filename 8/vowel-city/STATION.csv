@@ -1,0 +1,87 @@
+ID,CITY,STATE,LAT_N,LONG_W
+1,Acton,US,10001,2
+2,Albany,US,12201,1
+3,Albuquerque,US,87101,5
+4,Alexandria,US,22301,3
+5,Abilene,US,79601,4
+6,Anaheim,US,92801,6
+7,Anchorage,US,99501,2
+8,Aurora,US,80010,5
+9,Austin,US,73301,4
+10,Boston,US,2101,1
+11,Buffalo,US,14201,2
+12,Charlotte,US,28201,3
+13,Chicago,US,60601,1
+14,Columbus,US,43004,4
+15,Dallas,US,75201,5
+16,Denver,US,80201,3
+17,Detroit,US,48201,2
+18,El Paso,US,79901,6
+19,Erie,US,16501,3
+20,Eunice,US,70535,5
+21,Fresno,US,93650,4
+22,Frisco,US,75034,6
+23,Greenville,US,29601,2
+24,Hartford,US,6101,1
+25,Helena,US,59601,3
+26,Irving,US,75061,5
+27,Irvine,US,92602,4
+28,Jackson,US,39201,2
+29,Jacksonville,US,32099,3
+30,Kansas City,US,64101,1
+31,Laredo,US,78041,5
+32,Las Vegas,US,89101,3
+33,Lexington,US,40507,4
+34,Lincoln,US,68501,2
+35,Little Rock,US,72201,1
+36,Louisville,US,40201,3
+37,Lubbock,US,79401,5
+38,Madison,US,53701,2
+39,Memphis,US,38103,4
+40,Miami,US,33101,1
+41,Milwaukee,US,53201,3
+42,Minneapolis,US,55401,2
+43,Nashville,US,37201,4
+44,Newark,US,7101,1
+45,New Orleans,US,70112,3
+46,Norfolk,US,23501,2
+47,Oakland,US,94601,5
+48,Oklahoma City,US,73101,4
+49,Omaha,US,68101,2
+50,Ontario,US,91761,6
+51,Orlando,US,32801,3
+52,Philadelphia,US,19019,1
+53,Phoenix,US,85001,4
+54,Pittsburgh,US,15201,2
+55,Portland,US,97201,3
+56,Raleigh,US,27601,4
+57,Richmond,US,23218,2
+58,Sacramento,US,94203,3
+59,San Antonio,US,78201,5
+60,San Diego,US,92101,4
+61,San Jose,US,95101,3
+62,Seattle,US,98101,2
+63,Spokane,US,99201,4
+64,Stockton,US,95201,3
+65,Tampa,US,33601,5
+66,Toledo,US,43601,2
+67,Tucson,US,85701,4
+68,Tulsa,US,74101,3
+69,Urbana,US,61801,5
+70,Virginia Beach,US,23450,2
+71,Wichita,US,67201,3
+72,Yonkers,US,10701,4
+73,Athens,US,30601,1
+74,Alpine,US,79830,5
+75,Alma,US,48801,3
+76,Angola,US,46701,4
+77,Artesia,US,88210,6
+78,Astoria,US,97103,3
+79,Atmore,US,36502,5
+80,Attica,US,14011,2
+81,Olive,US,93022,4
+82,Orange,US,92856,3
+83,Orinda,US,94563,5
+84,Orem,US,84057,4
+85,Oroville,US,95965,3
+86,Ozone Park,US,11417,2

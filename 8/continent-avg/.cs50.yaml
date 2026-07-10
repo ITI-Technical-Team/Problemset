@@ -1,0 +1,9 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require continent-avg.sql
+    - !include CITY.csv
+    - !include COUNTRY.csv
+
+submit50:
+  files: *check50_files
