@@ -1,0 +1,9 @@
+check50:
+  checks: __init__.py
+  files: &check50_files
+    - !exclude "*"
+    - !require index.html
+    - !include style.css
+
+submit50:
+  files: *check50_files
