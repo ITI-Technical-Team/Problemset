@@ -1,4 +1,6 @@
 import check50
+import random
+import string
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -72,3 +74,17 @@ def test_large_yes():
 def test_large_no():
     """handles large non-palindrome of length 1000"""
     check50.run("./palindrome").stdin("a" * 500 + "b" + "a" * 499, prompt=False).stdout("NO", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_yes():
+    """handles random palindromes correctly"""
+    half = "".join(random.choices(string.ascii_lowercase, k=15))
+    pal = half + half[::-1]
+    check50.run("./palindrome").stdin(pal, prompt=False).stdout("YES", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_no():
+    """handles random non-palindromes correctly"""
+    half = "".join(random.choices(string.ascii_lowercase, k=15))
+    non_pal = half + "xy" + half[::-1]
+    check50.run("./palindrome").stdin(non_pal, prompt=False).stdout("NO", regex=False).exit(0)

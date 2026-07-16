@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -57,3 +58,11 @@ def test4():
 def test5():
 	"""handles input 1000000 1000000 -> 0"""
 	check50.run("./absolute").stdin("1000000 1000000", prompt=False).stdout("0", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+	"""handles random inputs correctly"""
+	a = random.randint(-1000000, 1000000)
+	b = random.randint(-1000000, 1000000)
+	expected = str(abs(a - b))
+	check50.run("./absolute").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)
