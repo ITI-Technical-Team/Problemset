@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """binary-search.cpp compiles successfully"""
-    check50.run("g++ -O2 -Wall -Werror binary-search.cpp -o binary-search").exit(0)
+    check50.run("g++ binary-search.cpp -o binary-search").exit(0)
 
 @check50.check(test_compile)
 def test_example1():

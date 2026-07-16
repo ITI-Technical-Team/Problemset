@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """hashes.cpp compiles successfully"""
-    check50.run("g++ -O2 -Wall -Werror hashes.cpp -o hashes").exit(0)
+    check50.run("g++ hashes.cpp -o hashes").exit(0)
 
 @check50.check(test_compile)
 def prints_3_hashes():

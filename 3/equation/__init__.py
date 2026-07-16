@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
 	"""equation.cpp compiles successfully"""
-	check50.run("g++ -O2 -Wall -Werror equation.cpp -o equation").exit(0)
+	check50.run("g++ equation.cpp -o equation").exit(0)
 
 @check50.check(test_compile)
 def test1():

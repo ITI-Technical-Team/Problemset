@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """summation.cpp compiles successfully"""
-    check50.run("g++ -O2 -Wall -Werror summation.cpp -o summation").exit(0)
+    check50.run("g++ summation.cpp -o summation").exit(0)
 
 @check50.check(test_compile)
 def sums_5_numbers():

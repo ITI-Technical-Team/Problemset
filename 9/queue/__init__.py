@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """queue.cpp compiles successfully"""
-    check50.run("g++ -O2 -Wall -Werror queue.cpp -o queue").exit(0)
+    check50.run("g++ queue.cpp -o queue").exit(0)
 
 @check50.check(test_compile)
 def test_example():

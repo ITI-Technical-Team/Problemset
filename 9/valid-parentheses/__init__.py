@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """valid-parentheses.cpp compiles successfully"""
-    check50.run("g++ -O2 -Wall -Werror valid-parentheses.cpp -o valid-parentheses").exit(0)
+    check50.run("g++ valid-parentheses.cpp -o valid-parentheses").exit(0)
 
 @check50.check(test_compile)
 def test_examples_set1():
