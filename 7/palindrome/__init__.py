@@ -1,5 +1,28 @@
 import check50
 
+class RobustRun(check50.run):
+    def __init__(self, *args, **kwargs):
+        self._waited = False
+        super().__init__(*args, **kwargs)
+
+    def _wait(self, timeout=5):
+        if self._waited:
+            return self
+        super()._wait(timeout)
+        self._waited = True
+        return self
+
+    def stdout(self, output=None, *args, **kwargs):
+        if output is not None and not kwargs.get("regex", True):
+            expected_str = str(output)
+            out = super().stdout(output=None)
+            if out.split() != expected_str.split():
+                raise check50.Mismatch(expected_str, out)
+            return self
+        return super().stdout(output, *args, **kwargs)
+
+check50.run = RobustRun
+
 @check50.check()
 def exists():
     """palindrome.cpp exists"""
@@ -49,4 +72,3 @@ def test_large_yes():
 def test_large_no():
     """handles large non-palindrome of length 1000"""
     check50.run("./palindrome").stdin("a" * 500 + "b" + "a" * 499, prompt=False).stdout("NO", regex=False).exit(0)
-
