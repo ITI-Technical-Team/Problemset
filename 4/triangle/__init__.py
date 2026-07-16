@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """triangle.cpp compiles successfully"""
-    check50.run("g++ triangle.cpp -o triangle").exit(0)
+    check50.run("g++ -O2 -Wall -Werror triangle.cpp -o triangle").exit(0)
 
 @check50.check(test_compile)
 def prints_size_3():

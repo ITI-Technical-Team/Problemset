@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """dynamic-array.cpp compiles successfully"""
-    check50.run("g++ dynamic-array.cpp -o dynamic-array").exit(0)
+    check50.run("g++ -O2 -Wall -Werror dynamic-array.cpp -o dynamic-array").exit(0)
 
 @check50.check(test_compile)
 def test_example():

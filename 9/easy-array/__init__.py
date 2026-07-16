@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """easy-array.cpp compiles successfully"""
-    check50.run("g++ easy-array.cpp -o easy-array").exit(0)
+    check50.run("g++ -O2 -Wall -Werror easy-array.cpp -o easy-array").exit(0)
 
 @check50.check(test_compile)
 def test_example():

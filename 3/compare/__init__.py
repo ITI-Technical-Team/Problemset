@@ -31,7 +31,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
 	"""compare.cpp compiles successfully"""
-	check50.run("g++ compare.cpp -o compare").exit(0)
+	check50.run("g++ -O2 -Wall -Werror compare.cpp -o compare").exit(0)
 
 @check50.check(test_compile)
 def test1():
