@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -65,3 +66,16 @@ def test_n_1000():
     expected_out = "1000 " + " ".join(str(i) for i in range(2, 1000)) + " 1"
     check50.run("./replacement").stdin(stdin_data, prompt=False).stdout(expected_out, regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """swaps random elements in a random array correctly"""
+    n = random.randint(10, 50)
+    a = random.randint(1, n)
+    b = random.randint(1, n)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    expected_arr = list(arr)
+    expected_arr[a-1], expected_arr[b-1] = expected_arr[b-1], expected_arr[a-1]
+    expected = " ".join(map(str, expected_arr))
+    stdin_data = f"{n} {a} {b}\n" + " ".join(map(str, arr))
+    check50.run("./replacement").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

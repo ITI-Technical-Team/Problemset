@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -53,3 +54,10 @@ def test_n_100():
     """handles edge case N = 100 (maximal value)"""
     expected_out = " ".join(str(i) for i in range(1, 101))
     check50.run("./numbers").stdin("100", prompt=False).stdout(expected_out, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """prints numbers from 1 to N correctly"""
+    n = random.randint(5, 50)
+    expected = " ".join(map(str, range(1, n + 1)))
+    check50.run("./numbers").stdin(str(n), prompt=False).stdout(expected, regex=False).exit(0)

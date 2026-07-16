@@ -73,3 +73,12 @@ def test_random():
     expected = str(sum(numbers))
     stdin_input = f"{n}\n" + " ".join(map(str, numbers))
     check50.run("./summation").stdin(stdin_input, prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """sums a random sequence of numbers correctly"""
+    n = random.randint(15, 50)
+    numbers = [random.randint(-1000, 1000) for _ in range(n)]
+    expected = str(sum(numbers))
+    stdin_input = f"{n}\n" + " ".join(map(str, numbers))
+    check50.run("./summation").stdin(stdin_input, prompt=False).stdout(expected, regex=False).exit(0)

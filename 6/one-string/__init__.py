@@ -1,4 +1,6 @@
 import check50
+import string
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -58,3 +60,11 @@ def test_large():
     """concatenates two large strings of length 500 each"""
     check50.run("./one-string").stdin("x" * 500 + "\n" + "y" * 500, prompt=False).stdout("x" * 500 + "y" * 500, regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """concatenates random strings correctly"""
+    s1 = "".join(random.choices(string.ascii_lowercase, k=10))
+    s2 = "".join(random.choices(string.ascii_lowercase, k=10))
+    expected = s1 + s2
+    check50.run("./one-string").stdin(f"{s1}\n{s2}", prompt=False).stdout(expected, regex=False).exit(0)

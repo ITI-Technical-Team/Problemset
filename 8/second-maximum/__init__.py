@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -63,3 +64,12 @@ def test_reverse_sorted():
     """handles reverse sorted distinct array"""
     check50.run("./second-maximum").stdin("5\n10 8 6 4 2", prompt=False).stdout("8", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """finds second maximum correctly on random distinct array"""
+    n = random.randint(10, 50)
+    arr = random.sample(range(-1000, 1000), n)
+    expected = str(sorted(arr)[-2])
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./second-maximum").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

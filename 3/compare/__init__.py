@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -72,3 +73,11 @@ def test7():
 def test8():
 	"""100 50 -> Greater"""
 	check50.run("./compare").stdin("100 50", prompt=False).stdout("Greater", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """handles random inputs correctly"""
+    a = random.randint(-1000000, 1000000)
+    b = random.randint(-1000000, 1000000)
+    expected = "Greater" if a > b else ("Less" if a < b else "Equal")
+    check50.run("./compare").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)

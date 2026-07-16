@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -69,3 +70,17 @@ def test_n_1000():
     stdin_data = "1000 99999\n" + " ".join(str(i) for i in range(1, 1000)) + " 99999"
     check50.run("./search").stdin(stdin_data, prompt=False).stdout("999", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """finds index of target in a random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    if random.choice([True, False]):
+        target = random.choice(arr)
+        expected = str(arr.index(target))
+    else:
+        target = 9999
+        expected = "notfound"
+    stdin_data = f"{n} {target}\n" + " ".join(map(str, arr))
+    check50.run("./search").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

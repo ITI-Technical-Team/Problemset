@@ -1,4 +1,6 @@
 import check50
+import string
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -63,3 +65,12 @@ def test_multiple_various_sizes():
     """handles N = 5 with various string sizes"""
     check50.run("./length").stdin("5\na\nab\nabc\nabcd\nabcde", prompt=False).stdout("1\n2\n3\n4\n5", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """prints lengths of random strings correctly"""
+    t = random.randint(3, 10)
+    strings = ["".join(random.choices(string.ascii_letters, k=random.randint(1, 20))) for _ in range(t)]
+    expected = "\n".join(str(len(s)) for s in strings)
+    stdin_data = f"{t}\n" + "\n".join(strings)
+    check50.run("./length").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

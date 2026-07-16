@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -68,3 +69,17 @@ def test_n_1_mismatch():
     """handles minimal size N = 1 with no match"""
     check50.run("./linear-search").stdin("1\n99\n10", prompt=False).stdout("-1", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """finds index of target using linear search correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    if random.choice([True, False]):
+        target = random.choice(arr)
+        expected = str(arr.index(target))
+    else:
+        target = 9999
+        expected = "-1"
+    stdin_data = f"{n}\n" + " ".join(map(str, arr)) + f"\n{target}"
+    check50.run("./linear-search").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

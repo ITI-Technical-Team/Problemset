@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -63,3 +64,12 @@ def test_all_negative():
     """handles all negative elements"""
     check50.run("./minimum").stdin("4\n-10 -20 -30 -40", prompt=False).stdout("-40", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """finds minimum in a random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    expected = str(min(arr))
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./minimum").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

@@ -88,3 +88,17 @@ def test_random_no():
     half = "".join(random.choices(string.ascii_lowercase, k=15))
     non_pal = half + "xy" + half[::-1]
     check50.run("./palindrome").stdin(non_pal, prompt=False).stdout("NO", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_yes():
+    """handles random palindromes correctly"""
+    half = "".join(random.choices(string.ascii_lowercase, k=15))
+    pal = half + half[::-1]
+    check50.run("./palindrome").stdin(pal, prompt=False).stdout("YES", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_no():
+    """handles random non-palindromes correctly"""
+    half = "".join(random.choices(string.ascii_lowercase, k=15))
+    non_pal = half + "xy" + half[::-1]
+    check50.run("./palindrome").stdin(non_pal, prompt=False).stdout("NO", regex=False).exit(0)

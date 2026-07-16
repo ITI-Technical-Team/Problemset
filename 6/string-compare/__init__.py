@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -79,3 +80,11 @@ def test_large_negative():
     check50.run("./string-compare").stdin("-1000 -999", prompt=False).stdout("Less", regex=False).exit(0)
 
 
+
+@check50.check(test_compile)
+def test_random():
+    """compares random integers correctly"""
+    a = random.randint(-1000000, 1000000)
+    b = random.randint(-1000000, 1000000)
+    expected = "Greater" if a > b else ("Less" if a < b else "Equal")
+    check50.run("./string-compare").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)

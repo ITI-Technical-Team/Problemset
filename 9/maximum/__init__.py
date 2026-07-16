@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -59,3 +60,13 @@ def test_n_1():
     """handles minimal array size N = 1"""
     check50.run("./maximum").stdin("1\n999", prompt=False).stdout("1", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """counts divisors of max in a random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(1, 1000) for _ in range(n)]
+    mx = max(arr)
+    expected = str(sum(1 for x in arr if mx % x == 0))
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./maximum").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

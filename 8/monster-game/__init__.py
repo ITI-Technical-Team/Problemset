@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -58,3 +59,13 @@ def test_mixed_longer():
     """handles a longer list with mixed values"""
     # h = 12. Monsters: 11, 5, 7, 3, 1 (5 monsters) have health strictly less than 12.
     check50.run("./monster-game").stdin("12\n8\n11 5 13 7 12 3 1 20", prompt=False).stdout("5", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """counts defeated monsters in a random game correctly"""
+    h = random.randint(1, 1000)
+    n = random.randint(10, 50)
+    monsters = [random.randint(1, 1500) for _ in range(n)]
+    expected = str(sum(1 for x in monsters if x < h))
+    stdin_data = f"{h}\n{n}\n" + " ".join(map(str, monsters))
+    check50.run("./monster-game").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

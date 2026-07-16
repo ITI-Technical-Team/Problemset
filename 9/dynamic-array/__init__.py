@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -58,3 +59,12 @@ def test_immediate_sentinel():
     """handles empty input sequence (sentinel at start)"""
     check50.run("./dynamic-array").stdin("-1", prompt=False).stdout("", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """prints random sequence of numbers correctly"""
+    n = random.randint(5, 30)
+    arr = [random.randint(1, 1000) for _ in range(n)]
+    expected = " ".join(map(str, arr))
+    stdin_data = "\n".join(map(str, arr)) + "\n-1"
+    check50.run("./dynamic-array").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

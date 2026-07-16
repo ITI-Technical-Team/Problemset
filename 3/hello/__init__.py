@@ -1,4 +1,6 @@
 import check50
+import string
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -52,3 +54,11 @@ def test3():
 def test4():
 	"""Alice 22 -> Hello Alice, you are 22 years old."""
 	check50.run("./hello").stdin("Alice 22", prompt=False).stdout("Hello Alice, you are 22 years old.", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """handles random name and age correctly"""
+    name = "".join(random.choices(string.ascii_letters, k=8))
+    age = random.randint(1, 100)
+    expected = f"Hello {name}, you are {age} years old."
+    check50.run("./hello").stdin(f"{name} {age}", prompt=False).stdout(expected, regex=False).exit(0)

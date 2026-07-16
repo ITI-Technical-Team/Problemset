@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -70,3 +71,13 @@ def test_maximal_bounds():
     elements = "\n".join(" ".join(["1000"] * 10) for _ in range(10))
     check50.run("./easy-array").stdin(f"10 10\n{elements}", prompt=False).stdout("100000", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """sums random 2D array correctly"""
+    r = random.randint(3, 10)
+    c = random.randint(3, 10)
+    elements = [[random.randint(-1000, 1000) for _ in range(c)] for _ in range(r)]
+    expected = str(sum(sum(row) for row in elements))
+    stdin_data = f"{r} {c}\n" + "\n".join(" ".join(map(str, row)) for row in elements)
+    check50.run("./easy-array").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

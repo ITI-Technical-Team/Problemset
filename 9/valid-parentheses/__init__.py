@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -58,3 +59,37 @@ def test_minimal_size():
     """handles minimal parenthesized strings of length 1"""
     check50.run("./valid-parentheses").stdin("2\n(\n)", prompt=False).stdout("NO\nNO", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """validates random parentheses sequences correctly"""
+    t = random.randint(5, 15)
+    inputs = []
+    outputs = []
+    for _ in range(t):
+        if random.choice([True, False]):
+            seq = []
+            bal = 0
+            for _ in range(random.randint(5, 15)):
+                if bal == 0 or random.choice([True, False]):
+                    seq.append("(")
+                    bal += 1
+                else:
+                    seq.append(")")
+                    bal -= 1
+            seq.extend([")"] * bal)
+            inputs.append("".join(seq))
+            outputs.append("YES")
+        else:
+            seq = "".join(random.choices(["(", ")"], k=random.randint(10, 30)))
+            bal = 0
+            ok = True
+            for c in seq:
+                bal += (1 if c == "(" else -1)
+                if bal < 0: ok = False
+            if bal != 0: ok = False
+            inputs.append(seq)
+            outputs.append("YES" if ok else "NO")
+    expected = "\n".join(outputs)
+    stdin_data = f"{t}\n" + "\n".join(inputs)
+    check50.run("./valid-parentheses").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

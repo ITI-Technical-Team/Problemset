@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -57,3 +58,14 @@ def test_negatives():
 def test_mixed_longer():
     """handles longer mixed arrays"""
     check50.run("./minimum-difference").stdin("10\n15 3 27 8 9 30 21 22 5 100", prompt=False).stdout("1", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """finds minimum difference in random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    s_arr = sorted(arr)
+    min_diff = min(s_arr[i+1] - s_arr[i] for i in range(n-1))
+    expected = str(min_diff)
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./minimum-difference").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

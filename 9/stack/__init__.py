@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -52,3 +53,25 @@ def test_lifo():
 def test_interleaved():
     """handles interleaved push and pop"""
     check50.run("./stack").stdin("7\n1 10\n1 20\n2\n1 30\n2\n2\n2", prompt=False).stdout("20\n30\n10\nEmpty!", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """simulates random stack operations correctly"""
+    q = random.randint(10, 30)
+    stack_data = []
+    inputs = []
+    outputs = []
+    for _ in range(q):
+        if random.choice([True, True, False]):
+            x = random.randint(1, 1000)
+            stack_data.append(x)
+            inputs.append(f"1 {x}")
+        else:
+            inputs.append("2")
+            if stack_data:
+                outputs.append(str(stack_data.pop()))
+            else:
+                outputs.append("Empty!")
+    expected = "\n".join(outputs)
+    stdin_data = f"{q}\n" + "\n".join(inputs)
+    check50.run("./stack").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

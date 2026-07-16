@@ -1,4 +1,6 @@
 import check50
+import string
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -73,3 +75,11 @@ def test_large_count():
     """handles large string N = 1000 all matching"""
     check50.run("./count").stdin("x" * 1000 + "\nx", prompt=False).stdout("1000", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """counts target char in a random string correctly"""
+    s = "".join(random.choices(string.ascii_letters, k=50))
+    c = random.choice(string.ascii_letters)
+    expected = str(s.count(c))
+    check50.run("./count").stdin(f"{s}\n{c}", prompt=False).stdout(expected, regex=False).exit(0)

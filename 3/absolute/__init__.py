@@ -66,3 +66,11 @@ def test_random():
 	b = random.randint(-1000000, 1000000)
 	expected = str(abs(a - b))
 	check50.run("./absolute").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+	"""handles random inputs correctly"""
+	a = random.randint(-1000000, 1000000)
+	b = random.randint(-1000000, 1000000)
+	expected = str(abs(a - b))
+	check50.run("./absolute").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)

@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -64,3 +65,17 @@ def test_large_non_square():
     check50.run("./perfect-square").stdin("999950885", prompt=False).stdout("NO", regex=False).exit(0)
 
 
+
+@check50.check(test_compile)
+def test_random_yes():
+    """handles random perfect square correctly"""
+    val = random.randint(1, 31622)
+    check50.run("./perfect-square").stdin(str(val * val), prompt=False).stdout("YES", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_no():
+    """handles random non-perfect square correctly"""
+    val = random.randint(2, 1000000)
+    while int(val**0.5)**2 == val:
+        val = random.randint(2, 1000000)
+    check50.run("./perfect-square").stdin(str(val), prompt=False).stdout("NO", regex=False).exit(0)

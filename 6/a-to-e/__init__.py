@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -73,3 +74,17 @@ def test_large_no():
     """handles large string N = 1000 with invalid character at the end"""
     check50.run("./a-to-e").stdin("1000\n" + "e" * 999 + "f", prompt=False).stdout("NO", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random_yes():
+    """handles string with only 'a'-'e' correctly"""
+    n = random.randint(5, 20)
+    s = "".join(random.choices("abcde", k=n))
+    check50.run("./a-to-e").stdin(f"{n}\n{s}", prompt=False).stdout("YES", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random_no():
+    """handles string with other characters correctly"""
+    n = random.randint(5, 20)
+    s = "".join(random.choices("abcde", k=n-1)) + "f"
+    check50.run("./a-to-e").stdin(f"{n}\n{s}", prompt=False).stdout("NO", regex=False).exit(0)

@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -57,3 +58,13 @@ def test_kN():
 def test_mid_with_duplicates():
     """handles mid-k with duplicates"""
     check50.run("./smallest-element").stdin("7 4\n5 1 3 3 2 9 5", prompt=False).stdout("3", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """finds k-th smallest element correctly"""
+    n = random.randint(10, 50)
+    k = random.randint(1, n)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    expected = str(sorted(arr)[k-1])
+    stdin_data = f"{n} {k}\n" + " ".join(map(str, arr))
+    check50.run("./smallest-element").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

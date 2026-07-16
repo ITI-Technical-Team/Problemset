@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -71,3 +72,27 @@ def test_efficiency():
         f.write(stdin_content)
 
     check50.run("timeout 2 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_random():
+    """finds queries in sorted array correctly"""
+    n = random.randint(10, 50)
+    q = random.randint(5, 15)
+    arr = sorted([random.randint(-1000, 1000) for _ in range(n)])
+    queries_str = []
+    expected_list = []
+    for _ in range(q):
+        x = random.randint(-1000, 1000)
+        if random.choice([True, False]):
+            val = random.choice(arr)
+            z = val + x
+            queries_str.append(f"{x} {z}")
+            expected_list.append("YES")
+        else:
+            z = random.randint(-2000, 2000)
+            target = z - x
+            queries_str.append(f"{x} {z}")
+            expected_list.append("YES" if target in arr else "NO")
+    expected = "\n".join(expected_list)
+    stdin_data = f"{n} {q}\n" + " ".join(map(str, arr)) + "\n" + "\n".join(queries_str)
+    check50.run("./target-finder").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

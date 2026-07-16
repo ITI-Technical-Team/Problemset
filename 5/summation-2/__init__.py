@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -59,3 +60,12 @@ def test_maximal_values():
     stdin_data = "100\n" + " ".join(["1000"] * 100)
     check50.run("./summation-2").stdin(stdin_data, prompt=False).stdout("100000", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """sums random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    expected = str(sum(arr))
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./summation-2").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

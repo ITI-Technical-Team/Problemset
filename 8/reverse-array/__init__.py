@@ -1,4 +1,5 @@
 import check50
+import random
 
 class RobustRun(check50.run):
     def __init__(self, *args, **kwargs):
@@ -58,3 +59,12 @@ def test_longer():
     """handles a longer array with positive values"""
     check50.run("./reverse-array").stdin("10\n5 10 2 7 7 3 9 1 4 8", prompt=False).stdout("8 4 1 9 3 7 7 2 10 5", regex=False).exit(0)
 
+
+@check50.check(test_compile)
+def test_random():
+    """reverses a random array correctly"""
+    n = random.randint(10, 50)
+    arr = [random.randint(-1000, 1000) for _ in range(n)]
+    expected = " ".join(map(str, reversed(arr)))
+    stdin_data = f"{n}\n" + " ".join(map(str, arr))
+    check50.run("./reverse-array").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)
