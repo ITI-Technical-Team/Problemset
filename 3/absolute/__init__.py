@@ -36,27 +36,27 @@ def test_compile():
 
 @check50.check(test_compile)
 def test1():
-	"""handles input 4 7 -> 3"""
+	"""handles input: 4 7"""
 	check50.run("./absolute").stdin("4 7", prompt=False).stdout("3", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test2():
-	"""handles input 9 2 -> 7"""
+	"""handles input: 9 2"""
 	check50.run("./absolute").stdin("9 2", prompt=False).stdout("7", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test3():
-	"""handles input 5 5 -> 0"""
+	"""handles input: 5 5"""
 	check50.run("./absolute").stdin("5 5", prompt=False).stdout("0", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test4():
-	"""handles input 1000000 999999 -> 1"""
+	"""handles input: 1000000 999999"""
 	check50.run("./absolute").stdin("1000000 999999", prompt=False).stdout("1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test5():
-	"""handles input 1000000 1000000 -> 0"""
+	"""handles input: 1000000 1000000"""
 	check50.run("./absolute").stdin("1000000 1000000", prompt=False).stdout("0", regex=False).exit(0)
 
 @check50.check(test_compile)

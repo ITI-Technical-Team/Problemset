@@ -36,47 +36,47 @@ def test_compile():
 
 @check50.check(test_compile)
 def test_example1():
-    """5 1 -> Greater"""
+    """handles input: 5 1"""
     check50.run("./string-compare").stdin("5 1", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_example2():
-    """5 5 -> Equal"""
+    """handles input: 5 5"""
     check50.run("./string-compare").stdin("5 5", prompt=False).stdout("Equal", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra1():
-    """-5 5 -> Less"""
+    """handles input: -5 5"""
     check50.run("./string-compare").stdin("-5 5", prompt=False).stdout("Less", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra2():
-    """-10 -20 -> Greater"""
+    """handles input: -10 -20"""
     check50.run("./string-compare").stdin("-10 -20", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra3():
-    """100 50 -> Greater"""
+    """handles input: 100 50"""
     check50.run("./string-compare").stdin("100 50", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra4():
-    """0 0 -> Equal"""
+    """handles input: 0 0"""
     check50.run("./string-compare").stdin("0 0", prompt=False).stdout("Equal", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra5():
-    """1 5 -> Less"""
+    """handles input: 1 5"""
     check50.run("./string-compare").stdin("1 5", prompt=False).stdout("Less", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_large_positive():
-    """handles positive boundary values: 1000 999 -> Greater"""
+    """handles positive boundary values: 1000 999"""
     check50.run("./string-compare").stdin("1000 999", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_large_negative():
-    """handles negative boundary values: -1000 -999 -> Less"""
+    """handles negative boundary values: -1000 -999"""
     check50.run("./string-compare").stdin("-1000 -999", prompt=False).stdout("Less", regex=False).exit(0)
 
 

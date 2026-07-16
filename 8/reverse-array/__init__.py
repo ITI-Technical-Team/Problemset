@@ -51,7 +51,7 @@ def test_even():
 
 @check50.check(test_compile)
 def test_duplicates():
-    """handles duplicates: 4 -> 1 1 5 1"""
+    """handles duplicates: 1 1 5 1"""
     check50.run("./reverse-array").stdin("4\n1 1 5 1", prompt=False).stdout("1 5 1 1", regex=False).exit(0)
 
 @check50.check(test_compile)

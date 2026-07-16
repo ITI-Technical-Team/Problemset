@@ -37,32 +37,32 @@ def test_compile():
 
 @check50.check(test_compile)
 def test_example1():
-    """outputs YES for abba"""
+    """handles input: abba"""
     check50.run("./palindrome").stdin("abba", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_example2():
-    """outputs NO for newcomers"""
+    """handles input: newcomers"""
     check50.run("./palindrome").stdin("newcomers", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_example3():
-    """outputs YES for mam"""
+    """handles input: mam"""
     check50.run("./palindrome").stdin("mam", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_single_char():
-    """single character is always a palindrome -> YES"""
+    """handles single character: 'a'"""
     check50.run("./palindrome").stdin("a", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_two_char_yes():
-    """handles 2-character palindrome: aa -> YES"""
+    """handles 2-character string: 'aa'"""
     check50.run("./palindrome").stdin("aa", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_two_char_no():
-    """handles 2-character non-palindrome: ab -> NO"""
+    """handles 2-character string: 'ab'"""
     check50.run("./palindrome").stdin("ab", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)

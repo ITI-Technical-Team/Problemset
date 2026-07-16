@@ -37,22 +37,22 @@ def test_compile():
 
 @check50.check(test_compile)
 def test1():
-	"""Mohamed 24 -> Hello Mohamed, you are 24 years old."""
+	"""handles input: Mohamed 24"""
 	check50.run("./hello").stdin("Mohamed 24", prompt=False).stdout("Hello Mohamed, you are 24 years old.", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test2():
-	"""Mazen 50 -> Hello Mazen, you are 50 years old."""
+	"""handles input: Mazen 50"""
 	check50.run("./hello").stdin("Mazen 50", prompt=False).stdout("Hello Mazen, you are 50 years old.", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test3():
-	"""John 30 -> Hello John, you are 30 years old."""
+	"""handles input: John 30"""
 	check50.run("./hello").stdin("John 30", prompt=False).stdout("Hello John, you are 30 years old.", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test4():
-	"""Alice 22 -> Hello Alice, you are 22 years old."""
+	"""handles input: Alice 22"""
 	check50.run("./hello").stdin("Alice 22", prompt=False).stdout("Hello Alice, you are 22 years old.", regex=False).exit(0)
 
 @check50.check(test_compile)

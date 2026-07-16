@@ -37,37 +37,37 @@ def test_compile():
 
 @check50.check(test_compile)
 def test_example1():
-    """counts 'l' in 'hello' -> 2"""
+    """counts 'l' in 'hello'"""
     check50.run("./count").stdin("hello\nl", prompt=False).stdout("2", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra1():
-    """counts 'z' in 'hello' -> 0"""
+    """counts 'z' in 'hello'"""
     check50.run("./count").stdin("hello\nz", prompt=False).stdout("0", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra2():
-    """counts 'a' in 'aaaaa' -> 5"""
+    """counts 'a' in 'aaaaa'"""
     check50.run("./count").stdin("aaaaa\na", prompt=False).stdout("5", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra3():
-    """counts 'b' in 'abcde' -> 1"""
+    """counts 'b' in 'abcde'"""
     check50.run("./count").stdin("abcde\nb", prompt=False).stdout("1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_minimal_match():
-    """handles minimal string with a match: a, count 'a' -> 1"""
+    """handles minimal string: 'a', target 'a'"""
     check50.run("./count").stdin("a\na", prompt=False).stdout("1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_minimal_no_match():
-    """handles minimal string with no match: a, count 'b' -> 0"""
+    """handles minimal string: 'a', target 'b'"""
     check50.run("./count").stdin("a\nb", prompt=False).stdout("0", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_case_sensitivity():
-    """handles case sensitivity: A, count 'a' -> 0"""
+    """checks case sensitivity: 'A', target 'a'"""
     check50.run("./count").stdin("A\na", prompt=False).stdout("0", regex=False).exit(0)
 
 @check50.check(test_compile)

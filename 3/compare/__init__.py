@@ -36,42 +36,42 @@ def test_compile():
 
 @check50.check(test_compile)
 def test1():
-	"""5 1 -> Greater"""
+	"""handles input: 5 1"""
 	check50.run("./compare").stdin("5 1", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test2():
-	"""5 5 -> Equal"""
+	"""handles input: 5 5"""
 	check50.run("./compare").stdin("5 5", prompt=False).stdout("Equal", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test3():
-	"""4 9 -> Less"""
+	"""handles input: 4 9"""
 	check50.run("./compare").stdin("4 9", prompt=False).stdout("Less", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test4():
-	"""0 0 -> Equal"""
+	"""handles input: 0 0"""
 	check50.run("./compare").stdin("0 0", prompt=False).stdout("Equal", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test5():
-	"""-1 1 -> Less"""
+	"""handles input: -1 1"""
 	check50.run("./compare").stdin("-1 1", prompt=False).stdout("Less", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test6():
-	"""-5 -5 -> Equal"""
+	"""handles input: -5 -5"""
 	check50.run("./compare").stdin("-5 -5", prompt=False).stdout("Equal", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test7():
-	"""-10 -20 -> Greater"""
+	"""handles input: -10 -20"""
 	check50.run("./compare").stdin("-10 -20", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test8():
-	"""100 50 -> Greater"""
+	"""handles input: 100 50"""
 	check50.run("./compare").stdin("100 50", prompt=False).stdout("Greater", regex=False).exit(0)
 
 @check50.check(test_compile)

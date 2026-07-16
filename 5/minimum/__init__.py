@@ -36,12 +36,12 @@ def test_compile():
 
 @check50.check(test_compile)
 def test1():
-    """handles input with negatives: 5 -> 3 -1 5 -13 -10"""
+    """handles negatives: 3 -1 5 -13 -10"""
     check50.run("./minimum").stdin("5\n3 -1 5 -13 -10", prompt=False).stdout("-13", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test2():
-    """handles input with positives: 4 -> 2 4 6 8"""
+    """handles positives: 2 4 6 8"""
     check50.run("./minimum").stdin("4\n2 4 6 8", prompt=False).stdout("2", regex=False).exit(0)
 
 @check50.check(test_compile)

@@ -36,27 +36,27 @@ def test_compile():
 
 @check50.check(test_compile)
 def test1():
-	"""5 3 -> 8, 2, 15, 1"""
+	"""handles input: 5 3"""
 	check50.run("./operations").stdin("5 3", prompt=False).stdout("8\n2\n15\n1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test2():
-	"""10 4 -> 14, 6, 40, 2"""
+	"""handles input: 10 4"""
 	check50.run("./operations").stdin("10 4", prompt=False).stdout("14\n6\n40\n2", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test3():
-	"""1 1 -> 2, 0, 1, 1"""
+	"""handles input: 1 1"""
 	check50.run("./operations").stdin("1 1", prompt=False).stdout("2\n0\n1\n1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test4():
-	"""5 5 -> 10, 0, 25, 1"""
+	"""handles input: 5 5"""
 	check50.run("./operations").stdin("5 5", prompt=False).stdout("10\n0\n25\n1", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test5():
-	"""100000000 100000000 -> big results"""
+	"""handles input: 100000000 100000000"""
 	check50.run("./operations").stdin("100000000 100000000", prompt=False).stdout("200000000\n0\n10000000000000000\n1", regex=False).exit(0)
 
 @check50.check(test_compile)

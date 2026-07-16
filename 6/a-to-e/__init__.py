@@ -36,32 +36,32 @@ def test_compile():
 
 @check50.check(test_compile)
 def test_example1():
-    """handles input: 3 ace -> YES"""
+    """handles input: 3 ace"""
     check50.run("./a-to-e").stdin("3\nace", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra1():
-    """handles input with f: 4 abcf -> NO"""
+    """handles input: 4 abcf (with invalid char 'f')"""
     check50.run("./a-to-e").stdin("4\nabcf", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra2():
-    """handles all valid chars: 5 abcde -> YES"""
+    """handles input: 5 abcde (all valid chars)"""
     check50.run("./a-to-e").stdin("5\nabcde", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra3():
-    """handles z: 1 z -> NO"""
+    """handles input: 1 z"""
     check50.run("./a-to-e").stdin("1\nz", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_minimal_yes():
-    """handles minimal YES: 1 a -> YES"""
+    """handles minimal input: 1 a"""
     check50.run("./a-to-e").stdin("1\na", prompt=False).stdout("YES", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_minimal_no():
-    """handles minimal NO: 1 f -> NO"""
+    """handles minimal input: 1 f"""
     check50.run("./a-to-e").stdin("1\nf", prompt=False).stdout("NO", regex=False).exit(0)
 
 @check50.check(test_compile)

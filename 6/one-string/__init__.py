@@ -37,22 +37,22 @@ def test_compile():
 
 @check50.check(test_compile)
 def test_example1():
-    """concatenates string and sheet -> stringsheet"""
+    """concatenates 'string' and 'sheet'"""
     check50.run("./one-string").stdin("string\nsheet", prompt=False).stdout("stringsheet", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra1():
-    """concatenates a and b -> ab"""
+    """concatenates 'a' and 'b'"""
     check50.run("./one-string").stdin("a\nb", prompt=False).stdout("ab", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_extra2():
-    """concatenates hello and world -> helloworld"""
+    """concatenates 'hello' and 'world'"""
     check50.run("./one-string").stdin("hello\nworld", prompt=False).stdout("helloworld", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_identical():
-    """concatenates identical strings -> samesame"""
+    """concatenates identical strings: 'same' and 'same'"""
     check50.run("./one-string").stdin("same\nsame", prompt=False).stdout("samesame", regex=False).exit(0)
 
 @check50.check(test_compile)
