@@ -12,14 +12,40 @@ def exists():
         raise check50.Failure("No .sb3 file found.")
 
 @check50.check(exists)
-def test_requirements():
-    """project is expected to count even numbers from 1 to 100"""
+def valid_sb3():
+    """file is a valid Scratch project"""
+    try:
+        scratch_helper.get_project()
+    except Exception as e:
+        raise check50.Failure("Could not read project.sb3. Make sure it is a valid Scratch file.")
+
+@check50.check(valid_sb3)
+def has_sprites():
+    """project contains at least one sprite"""
+    project = scratch_helper.get_project()
+    if scratch_helper.count_sprites(project) < 1:
+        raise check50.Failure("Did not find any sprites in the project.")
+
+@check50.check(valid_sb3)
+def has_blocks():
+    """project contains code blocks"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
-    
+    if len(blocks) < 1:
+        raise check50.Failure("Project seems empty (no blocks found).")
+
+@check50.check(valid_sb3)
+def has_loop():
+    """project contains a loop to count to 100"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
     if not scratch_helper.check_loop(blocks):
         raise check50.Failure("Did not find any loops to count to 100.")
-    # Heuristic check for say blocks or variables
+
+@check50.check(valid_sb3)
+def has_say_blocks():
+    """sprite says the numbers"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
     if not scratch_helper.has_opcode(blocks, "looks_say") and not scratch_helper.has_opcode(blocks, "looks_sayforsecs"):
         raise check50.Failure("Sprite doesn't seem to say the numbers.")
-
