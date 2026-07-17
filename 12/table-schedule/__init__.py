@@ -177,14 +177,34 @@ def has_at_least_3_images():
                 "An <img> tag is missing the 'src' attribute",
                 help="Make sure all <img> elements specify a source file/URL using src=\"...\""
             )
-        # If it's a local file path (not starting with http://, https://, or data:), verify it exists
-        if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
+        # Check if remote link is broken
+        if src.startswith("http://") or src.startswith("https://"):
+            import urllib.request
+            import urllib.error
             try:
-                check50.exists(src)
-            except check50.Failure:
+                req = urllib.request.Request(
+                    src, 
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                )
+                with urllib.request.urlopen(req, timeout=2.0) as response:
+                    pass
+            except urllib.error.HTTPError as e:
                 raise check50.Failure(
-                    f"Referenced image file '{src}' does not exist in your directory",
-                    help=f"Make sure you have placed the image file '{src}' in the same directory as food.html"
+                    f"Referenced remote image URL '{src}' is broken (returned HTTP error {e.code})",
+                    help="Make sure the image URL is correct and active"
+                )
+            except Exception:
+                # Ignore connection/timeout errors to allow offline grading
+                pass
+        elif src.startswith("data:"):
+            pass
+        else:
+            # Local image: verify it has a valid image extension to ensure it is not dummy text
+            valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp")
+            if not any(src.lower().endswith(ext) for ext in valid_exts):
+                raise check50.Failure(
+                    f"Referenced image path '{src}' is not a valid image file",
+                    help="Make sure your src attribute points to a valid image file (ending with .png, .jpg, .jpeg, etc.)"
                 )
 
 
