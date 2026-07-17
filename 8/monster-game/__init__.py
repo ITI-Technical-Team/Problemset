@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """monster-game.cpp compiles successfully"""
-    check50.run("g++ monster-game.cpp -o monster-game").exit(0)
+    check50.run("g++ monster-game.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o monster-game").exit(0)
 
 @check50.check(test_compile)
 def test_example():

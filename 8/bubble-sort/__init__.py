@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """bubble-sort.cpp compiles successfully"""
-    check50.run("g++ bubble-sort.cpp -o bubble-sort").exit(0)
+    check50.run("g++ bubble-sort.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o bubble-sort").exit(0)
 
 @check50.check(test_compile)
 def test_example():

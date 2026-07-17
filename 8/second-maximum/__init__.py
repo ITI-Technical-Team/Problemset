@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """second-maximum.cpp compiles successfully"""
-    check50.run("g++ second-maximum.cpp -o second-maximum").exit(0)
+    check50.run("g++ second-maximum.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o second-maximum").exit(0)
 
 @check50.check(test_compile)
 def test_example1():

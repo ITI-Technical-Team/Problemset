@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """minimum.cpp compiles successfully"""
-    check50.run("g++ minimum.cpp -o minimum").exit(0)
+    check50.run("g++ minimum.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o minimum").exit(0)
 
 @check50.check(test_compile)
 def test1():
