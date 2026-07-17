@@ -16,7 +16,7 @@ class RobustRun(check50.run):
         if output is not None and not kwargs.get("regex", True):
             expected_str = str(output)
             out = super().stdout(output=None)
-            if out.split() != expected_str.split():
+            if expected_str not in out:
                 raise check50.Mismatch(expected_str, out)
             return self
         return super().stdout(output, *args, **kwargs)

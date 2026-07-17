@@ -154,6 +154,7 @@ let elements = {
 
 global.alert = (msg) => { alerted = String(msg); };
 global.document = {
+    body: mockBody,
     querySelector: (sel) => {
         sel = sel.replace(/[#.]/g, "").trim();
         if (sel === "body") return mockBody;

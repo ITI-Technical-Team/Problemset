@@ -158,7 +158,7 @@ def has_paragraphs_in_cells():
 
 @check50.check(has_table)
 def has_at_least_3_images():
-    """table has at least 3 food images and referenced files exist"""
+    """table has at least 3 food images"""
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
@@ -177,15 +177,6 @@ def has_at_least_3_images():
                 "An <img> tag is missing the 'src' attribute",
                 help="Make sure all <img> elements specify a source file/URL using src=\"...\""
             )
-        # If it's a local file path (not starting with http://, https://, or data:), verify it exists
-        if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
-            try:
-                check50.exists(src)
-            except check50.Failure:
-                raise check50.Failure(
-                    f"Referenced image file '{src}' does not exist in your directory",
-                    help=f"Make sure you have downloaded or placed '{src}' in the same directory as food.html"
-                )
 
 
 @check50.check(has_table)

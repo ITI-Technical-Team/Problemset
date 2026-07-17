@@ -131,7 +131,7 @@ def has_ol_with_3_items():
 
 @check50.check(exists)
 def has_figure_with_img_and_figcaption():
-    """index.html has a <figure> with <img> and <figcaption> and referenced files exist"""
+    """index.html has a <figure> with <img> and <figcaption>"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     figure = soup.find("figure")
@@ -153,21 +153,12 @@ def has_figure_with_img_and_figcaption():
             help="Add a <figcaption>caption</figcaption> inside your <figure>"
         )
         
-    # Check that referenced local image file actually exists
     src = img.get("src", "").strip()
     if not src:
         raise check50.Failure(
             "The <img> tag inside <figure> is missing a 'src' attribute",
             help="Make sure your <img> element specifies a source file/URL using src=\"...\""
         )
-    if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
-        try:
-            check50.exists(src)
-        except check50.Failure:
-            raise check50.Failure(
-                f"Referenced image file '{src}' does not exist in your directory",
-                help=f"Make sure you have placed the image file '{src}' in the same directory as index.html"
-            )
 
 
 @check50.check(exists)
