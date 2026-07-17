@@ -24,6 +24,38 @@ def exists():
 
 
 @check50.check(exists)
+def has_title():
+    """index.html has page title 'Company Info - Objects Task'"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    title = soup.find("title")
+    if not title:
+        raise check50.Failure("Missing <title> element")
+    text = title.get_text().strip()
+    if text != "Company Info - Objects Task":
+        raise check50.Failure(
+            f"Expected page title to be 'Company Info - Objects Task', but found '{text}'",
+            help="Add <title>Company Info - Objects Task</title> inside the <head> block"
+        )
+
+
+@check50.check(exists)
+def has_heading():
+    """index.html has heading 'Object Task: Company Info'"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    h1 = soup.find("h1")
+    if not h1:
+        raise check50.Failure("Missing <h1> element")
+    text = h1.get_text().strip()
+    if text != "Object Task: Company Info":
+        raise check50.Failure(
+            f"Expected <h1> heading to be 'Object Task: Company Info', but found '{text}'",
+            help="Add <h1>Object Task: Company Info</h1> to your page body"
+        )
+
+
+@check50.check(exists)
 def has_button():
     """index.html has a button that triggers showInfo()"""
     html = _read("index.html")
