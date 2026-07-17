@@ -63,6 +63,7 @@ def verifies_company_and_showinfo():
 
     # Node environment setup to validate structure and output
     mock_env = r"""
+const realLog = global.console.log;
 let alerted = null;
 let logged = [];
 global.alert  = (msg) => { alerted = String(msg); };
@@ -73,35 +74,35 @@ global.document = { getElementById: () => ({ innerText: "", textContent: "" }) }
     test_harness = r"""
 // 1. Verify company object exists and is styled correctly
 if (typeof company === "undefined") {
-    console.log("FAIL_NO_COMPANY");
+    realLog("FAIL_NO_COMPANY");
     process.exit(1);
 }
 if (typeof company !== "object" || company === null) {
-    console.log("FAIL_COMPANY_TYPE");
+    realLog("FAIL_COMPANY_TYPE");
     process.exit(1);
 }
 if (!company.name || typeof company.name !== "string") {
-    console.log("FAIL_COMPANY_NAME");
+    realLog("FAIL_COMPANY_NAME");
     process.exit(1);
 }
 if (!Array.isArray(company.employees)) {
-    console.log("FAIL_NO_EMPLOYEES");
+    realLog("FAIL_NO_EMPLOYEES");
     process.exit(1);
 }
 if (company.employees.length === 0) {
-    console.log("FAIL_EMPTY_EMPLOYEES");
+    realLog("FAIL_EMPTY_EMPLOYEES");
     process.exit(1);
 }
 for (const emp of company.employees) {
     if (!emp.name || !emp.role) {
-        console.log("FAIL_EMPLOYEE_FIELDS");
+        realLog("FAIL_EMPLOYEE_FIELDS");
         process.exit(1);
     }
 }
 
 // 2. Verify showInfo function exists
 if (typeof showInfo !== "function") {
-    console.log("FAIL_NO_SHOWINFO");
+    realLog("FAIL_NO_SHOWINFO");
     process.exit(1);
 }
 
@@ -109,20 +110,20 @@ if (typeof showInfo !== "function") {
 try {
     showInfo();
 } catch (e) {
-    console.log("ERROR:" + e.message);
+    realLog("ERROR:" + e.message);
     process.exit(1);
 }
 
 if (alerted === null) {
-    console.log("FAIL_NO_ALERT");
+    realLog("FAIL_NO_ALERT");
     process.exit(1);
 }
 if (!alerted.toLowerCase().includes(company.name.toLowerCase())) {
-    console.log("FAIL_ALERT_TEXT:" + alerted);
+    realLog("FAIL_ALERT_TEXT:" + alerted);
     process.exit(1);
 }
 if (logged.length < 2) {
-    console.log("FAIL_LOGS_COUNT:" + logged.length);
+    realLog("FAIL_LOGS_COUNT:" + logged.length);
     process.exit(1);
 }
 
@@ -136,12 +137,12 @@ for (const emp of company.employees) {
         }
     }
     if (!found) {
-        console.log("FAIL_LOG_MISSING_EMPLOYEE:" + emp.name);
+        realLog("FAIL_LOG_MISSING_EMPLOYEE:" + emp.name);
         process.exit(1);
     }
 }
 
-console.log("PASS");
+realLog("PASS");
 """
 
     full_js = mock_env + js_code + test_harness

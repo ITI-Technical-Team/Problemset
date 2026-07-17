@@ -77,6 +77,7 @@ def performs_array_operations_and_outputs():
     # Expected: "mango has been added...", Alert with joined array: "mango, grape, cherry, blueberry, apple"
     # Console logs: 1 - MANGO, 2 - GRAPE, 3 - CHERRY, 4 - BLUEBERRY, 5 - APPLE
     mock_mango = r"""
+const realLog = global.console.log;
 let _promptVal = "mango";
 let alerted = [];
 let logged = [];
@@ -87,25 +88,25 @@ global.document = { getElementById: () => ({ innerText: "", textContent: "" }) }
 """
     harness_mango = r"""
 if (alerted.length < 2) {
-    console.log("FAIL_NO_ALERTS");
+    realLog("FAIL_NO_ALERTS");
     process.exit(1);
 }
 const first_alert = alerted[0].toLowerCase();
 if (!first_alert.includes("mango") || !first_alert.includes("add")) {
-    console.log("FAIL_FIRST_ALERT_MANGO:" + alerted[0]);
+    realLog("FAIL_FIRST_ALERT_MANGO:" + alerted[0]);
     process.exit(1);
 }
 const second_alert = alerted[1].toLowerCase();
 const expected_order = ["mango", "grape", "cherry", "blueberry", "apple"];
 for (const f of expected_order) {
     if (!second_alert.includes(f)) {
-        console.log("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
+        realLog("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
         process.exit(1);
     }
 }
 // Check log output
 if (logged.length < 5) {
-    console.log("FAIL_LOGS_COUNT:" + logged.length);
+    realLog("FAIL_LOGS_COUNT:" + logged.length);
     process.exit(1);
 }
 const expected_logs = [
@@ -117,11 +118,11 @@ const expected_logs = [
 ];
 for (let i = 0; i < expected_logs.length; i++) {
     if (!logged[i].toUpperCase().includes(expected_logs[i])) {
-        console.log("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
+        realLog("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
         process.exit(1);
     }
 }
-console.log("PASS_MANGO");
+realLog("PASS_MANGO");
 """
     rc, out, err = _run_node(mock_mango + js_code + harness_mango)
     if rc != 0 or out != "PASS_MANGO":
@@ -131,6 +132,7 @@ console.log("PASS_MANGO");
     # Expected: "yes, we already have apple.", Alert with joined array: "grape, cherry, blueberry, apple"
     # Console logs: 1 - GRAPE, 2 - CHERRY, 3 - BLUEBERRY, 4 - APPLE
     mock_apple = r"""
+const realLog = global.console.log;
 let _promptVal = "APPLE";
 let alerted = [];
 let logged = [];
@@ -141,24 +143,24 @@ global.document = { getElementById: () => ({ innerText: "", textContent: "" }) }
 """
     harness_apple = r"""
 if (alerted.length < 2) {
-    console.log("FAIL_NO_ALERTS");
+    realLog("FAIL_NO_ALERTS");
     process.exit(1);
 }
 const first_alert = alerted[0].toLowerCase();
 if (!first_alert.includes("already") || !first_alert.includes("apple")) {
-    console.log("FAIL_FIRST_ALERT_APPLE:" + alerted[0]);
+    realLog("FAIL_FIRST_ALERT_APPLE:" + alerted[0]);
     process.exit(1);
 }
 const second_alert = alerted[1].toLowerCase();
 const expected_order = ["grape", "cherry", "blueberry", "apple"];
 for (const f of expected_order) {
     if (!second_alert.includes(f)) {
-        console.log("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
+        realLog("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
         process.exit(1);
     }
 }
 if (logged.length < 4) {
-    console.log("FAIL_LOGS_COUNT:" + logged.length);
+    realLog("FAIL_LOGS_COUNT:" + logged.length);
     process.exit(1);
 }
 const expected_logs = [
@@ -169,11 +171,11 @@ const expected_logs = [
 ];
 for (let i = 0; i < expected_logs.length; i++) {
     if (!logged[i].toUpperCase().includes(expected_logs[i])) {
-        console.log("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
+        realLog("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
         process.exit(1);
     }
 }
-console.log("PASS_APPLE");
+realLog("PASS_APPLE");
 """
     rc, out, err = _run_node(mock_apple + js_code + harness_apple)
     if rc != 0 or out != "PASS_APPLE":
