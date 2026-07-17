@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """summation-2.cpp compiles successfully"""
-    check50.run("g++ summation-2.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o summation-2").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG summation-2.cpp -o summation-2").exit(0)
 
 @check50.check(test_compile)
 def test1():
@@ -69,3 +69,22 @@ def test_random():
     expected = str(sum(arr))
     stdin_data = f"{n}\n" + " ".join(map(str, arr))
     check50.run("./summation-2").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_function_defined():
+    """custom function is defined in summation-2.cpp"""
+    import re
+    with open("summation-2.cpp", "r") as f:
+        code = f.read()
+    
+    # Remove single-line and multi-line comments
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    # Find all function definitions/declarations
+    matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
+    
+    custom_functions = [name for _, name in matches if name != "main"]
+    if not custom_functions:
+        raise check50.Failure("Could not find a custom function defined (other than main) as required by the problem description.")

@@ -33,7 +33,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """palindrome.cpp compiles successfully"""
-    check50.run("g++ palindrome.cpp -o palindrome").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG palindrome.cpp -o palindrome").exit(0)
 
 @check50.check(test_compile)
 def test_example1():

@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """compare-numbers.cpp compiles successfully"""
-    check50.run("g++ compare-numbers.cpp -o compare-numbers").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG compare-numbers.cpp -o compare-numbers").exit(0)
 
 @check50.check(test_compile)
 def test_less():

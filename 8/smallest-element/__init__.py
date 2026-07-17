@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """smallest-element.cpp compiles successfully"""
-    check50.run("g++ smallest-element.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o smallest-element").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG smallest-element.cpp -o smallest-element").exit(0)
 
 @check50.check(test_compile)
 def test_example1():

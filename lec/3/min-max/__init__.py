@@ -9,7 +9,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """min-max.cpp compiles successfully"""
-    check50.run("g++ min-max.cpp -o min-max").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG min-max.cpp -o min-max").exit(0)
 
 def verify_min_max_output(out, a, b, c):
     tokens = out.split()

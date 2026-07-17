@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """even-odd.cpp compiles successfully"""
-    check50.run("g++ even-odd.cpp -o even-odd").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG even-odd.cpp -o even-odd").exit(0)
 
 @check50.check(test_compile)
 def test_two():
@@ -50,3 +50,22 @@ def test_random():
     n = random.randint(-1000, 1000)
     expected = "Even" if n % 2 == 0 else "Odd"
     check50.run("./even-odd").stdin(str(n), prompt=False).stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_function_defined():
+    """custom function is defined in even-odd.cpp"""
+    import re
+    with open("even-odd.cpp", "r") as f:
+        code = f.read()
+    
+    # Remove single-line and multi-line comments
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    # Find all function definitions/declarations
+    matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
+    
+    custom_functions = [name for _, name in matches if name != "main"]
+    if not custom_functions:
+        raise check50.Failure("Could not find a custom function defined (other than main) as required by the problem description.")

@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """search.cpp compiles successfully"""
-    check50.run("g++ search.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o search").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG search.cpp -o search").exit(0)
 
 @check50.check(test_compile)
 def test1():

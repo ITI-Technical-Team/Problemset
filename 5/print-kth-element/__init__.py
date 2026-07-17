@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """print-kth-element.cpp compiles successfully"""
-    check50.run("g++ print-kth-element.cpp -fsanitize=bounds -fno-sanitize-recover=bounds -o print-kth-element").exit(0)
+    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG print-kth-element.cpp -o print-kth-element").exit(0)
 
 @check50.check(test_compile)
 def test1():
