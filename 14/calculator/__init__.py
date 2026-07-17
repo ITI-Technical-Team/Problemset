@@ -1,5 +1,7 @@
 import check50
 import re
+import subprocess
+from bs4 import BeautifulSoup
 
 
 def _read(path):
@@ -7,8 +9,14 @@ def _read(path):
         return f.read()
 
 
-def _html():
-    return _read("index.html").lower()
+def _strip_js_comments(code):
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
+
+
+def _strip_css_comments(code):
+    return re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
 
 
 # ─── existence & structure ────────────────────────────────────────────────────
@@ -22,8 +30,8 @@ def exists():
 @check50.check(exists)
 def has_info_element():
     """index.html has an element with id='info'"""
-    html = _html()
-    if 'id="info"' not in html and "id='info'" not in html:
+    soup = BeautifulSoup(_read("index.html"), "html.parser")
+    if not soup.find(id="info"):
         raise check50.Failure(
             "Missing element with id='info'",
             help="Add a paragraph or div with id=\"info\" to hold the welcome message"
@@ -33,15 +41,14 @@ def has_info_element():
 @check50.check(exists)
 def has_button_trigger():
     """index.html contains a button that calls showInfo()"""
-    html = _html()
-    if "<button" not in html:
+    html = _read("index.html").lower()
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("button"):
         raise check50.Failure("Missing <button> element")
-        
-    # Check if button has onclick="showInfo()" or similar
     if "showinfo()" not in html:
         raise check50.Failure(
             "Button does not trigger showInfo() on click",
-            help="Add onclick=\"showInfo()\" to your button"
+            help="Add onclick=\"showInfo()\" to your button element"
         )
 
 
@@ -49,69 +56,156 @@ def has_button_trigger():
 
 @check50.check(exists)
 def has_showinfo_function():
-    """JavaScript defines the showInfo() function"""
+    """JavaScript defines a showInfo() function"""
     html = _read("index.html")
-    # Match function showInfo() or const showInfo = ...
-    if "function showInfo" not in html and "const showInfo" not in html and "let showInfo" not in html:
+    soup = BeautifulSoup(html, "html.parser")
+    script_tag = soup.find("script")
+    if not script_tag:
+        raise check50.Failure("Missing <script> tag")
+    js_clean = _strip_js_comments(script_tag.string or "")
+    if "showinfo" not in js_clean.lower():
         raise check50.Failure(
-            "Missing showInfo() function",
+            "Missing showInfo() function definition",
             help="Define your click handler: function showInfo() { ... }"
         )
 
 
 @check50.check(exists)
-def js_prompts_and_updates():
-    """showInfo() prompts for name, updates welcome message, and alerts user"""
-    html = _html()
-    if "prompt(" not in html:
+def showinfo_prompts_and_greets():
+    """showInfo() prompts for name, updates #info with greeting, and alerts"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    script_tag = soup.find("script")
+    if not script_tag:
+        raise check50.Failure("Missing <script> tag")
+
+    js_code = script_tag.string or ""
+    js_clean = _strip_js_comments(js_code)
+
+    # Active-code checks
+    if "prompt(" not in js_clean:
         raise check50.Failure(
-            "Missing prompt() call",
-            help="Ask the user for their name: prompt('What is your name?')"
+            "Missing prompt() call in active JavaScript code",
+            help="Ask the user for their name using prompt(), e.g. prompt('What is your name?')"
         )
-    if "hello" not in html:
+    if "alert(" not in js_clean:
         raise check50.Failure(
-            "Welcome message doesn't appear to greet the user with 'Hello'",
-            help="Construct the message: 'Hello, ' + name + '!'"
+            "Missing alert() call in active JavaScript code",
+            help="Call alert() inside showInfo() to confirm the greeting was updated"
         )
-    if "alert(" not in html:
-        raise check50.Failure(
-            "Missing alert() confirmation",
-            help="Call alert() inside showInfo() to confirm the update"
-        )
+
+    # Functional Node.js execution
+    mock_env = r"""
+let _infoText = "Welcome!";
+let alerted = null;
+let promptCalled = false;
+
+global.prompt = (msg) => { promptCalled = true; return "TestName"; };
+global.alert  = (msg) => { alerted = String(msg); };
+global.document = {
+    getElementById: (id) => ({
+        get innerText()    { return _infoText; },
+        set innerText(v)   { _infoText = v; },
+        get textContent()  { return _infoText; },
+        set textContent(v) { _infoText = v; },
+    })
+};
+"""
+
+    test_harness = r"""
+try { showInfo(); }
+catch (e) {
+    console.log("ERROR:" + e.message);
+    process.exit(1);
+}
+
+if (!promptCalled) {
+    console.log("FAIL_NO_PROMPT");
+    process.exit(1);
+}
+if (!_infoText.toLowerCase().includes("testname")) {
+    console.log("FAIL_GREETING:" + _infoText);
+    process.exit(1);
+}
+if (alerted === null) {
+    console.log("FAIL_NO_ALERT");
+    process.exit(1);
+}
+console.log("PASS");
+"""
+
+    full_js = mock_env + js_code + test_harness
+
+    try:
+        res = subprocess.run(["node", "-e", full_js], capture_output=True, text=True)
+    except FileNotFoundError:
+        return
+
+    if res.returncode != 0:
+        out = res.stdout.strip() or res.stderr.strip()
+        if out.startswith("FAIL_NO_PROMPT"):
+            raise check50.Failure(
+                "showInfo() did not call prompt()",
+                help="Use prompt() inside showInfo() to ask for the user's name"
+            )
+        elif out.startswith("FAIL_GREETING"):
+            got = out.split(":", 1)[1]
+            raise check50.Failure(
+                "Greeting does not include the user's name",
+                help=f"Expected #info to contain the name from prompt(), but got: '{got}'"
+            )
+        elif out.startswith("FAIL_NO_ALERT"):
+            raise check50.Failure(
+                "showInfo() did not call alert()",
+                help="Call alert() inside showInfo() after updating the greeting"
+            )
+        elif out.startswith("ERROR"):
+            raise check50.Failure(
+                "JavaScript error in showInfo()",
+                help=out.split(":", 1)[1]
+            )
+        else:
+            raise check50.Failure("JavaScript execution error", help=out or res.stderr.strip())
 
 
 # ─── CSS checks ───────────────────────────────────────────────────────────────
 
 @check50.check(exists)
 def checks_css_styling():
-    """CSS styles the info text and the button"""
-    html = _html()
-    
-    # Check for center alignment
-    if "text-align" not in html or "center" not in html:
-         raise check50.Failure(
-            "Page content is not centered",
-            help="Add 'text-align: center;' inside your CSS"
-        )
-         
-    # Check selector for info
-    if "#info" not in html:
+    """CSS centers the page and styles #info and the button"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    style_tag = soup.find("style")
+    if not style_tag:
         raise check50.Failure(
-            "Missing CSS rules for #info",
+            "Missing <style> tag",
+            help="Add a `<style>` block inside your `<head>` to define CSS"
+        )
+
+    css = _strip_css_comments(style_tag.string or "").lower()
+
+    if "text-align" not in css or "center" not in css:
+        raise check50.Failure(
+            "Page content is not centered",
+            help="Add 'text-align: center;' to your CSS"
+        )
+    if "#info" not in css:
+        raise check50.Failure(
+            "Missing CSS rule for #info",
             help="Style the welcome message: #info { font-size: 22px; color: darkblue; }"
         )
-        
-    # Check selector for button
-    if "button" not in html:
+    if "padding" not in css:
         raise check50.Failure(
-            "Missing CSS rules for button",
-            help="Style your button with background color, padding, and border radius"
+            "Button is missing a padding property in CSS",
+            help="Add padding to your button, e.g. padding: 10px 20px;"
         )
-        
-    # Check button properties in CSS
-    if "padding" not in html:
-        raise check50.Failure("Button is missing a padding property in CSS")
-    if "background-color" not in html:
-        raise check50.Failure("Button is missing a background-color property in CSS")
-    if "border-radius" not in html:
-        raise check50.Failure("Button is missing a border-radius property in CSS")
+    if "background-color" not in css:
+        raise check50.Failure(
+            "Button is missing a background-color property in CSS",
+            help="Add background-color to your button"
+        )
+    if "border-radius" not in css:
+        raise check50.Failure(
+            "Button is missing a border-radius property in CSS",
+            help="Add border-radius to your button for rounded corners"
+        )

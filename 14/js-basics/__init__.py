@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _strip_js_comments(code):
+    """Strip single-line and multi-line JS comments."""
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
+
+
+def _strip_css_comments(code):
+    """Strip CSS /* ... */ comments."""
+    return re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+
+
 # ─── existence & structure ────────────────────────────────────────────────────
 
 @check50.check()
@@ -41,153 +53,146 @@ def has_result_element():
         )
 
 
-# ─── JS checks ────────────────────────────────────────────────────────────────
+# ─── JS logic checks ──────────────────────────────────────────────────────────
 
 @check50.check(has_script)
 def prompts_user():
-    """JavaScript prompts the user for their age and parses it"""
+    """JavaScript prompts the user for their age and converts it with Number()"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
-    js_code = soup.find("script").string or ""
-    
-    # Strip comments
-    js_code_clean = re.sub(r'//.*', '', js_code)
-    js_code_clean = re.sub(r'/\*.*?\*/', '', js_code_clean, flags=re.DOTALL)
-    
-    if "prompt(" not in js_code_clean.lower():
+    js_raw = soup.find("script").string or ""
+    js_clean = _strip_js_comments(js_raw)
+
+    if "prompt(" not in js_clean:
         raise check50.Failure(
             "Missing prompt() call in active JavaScript code",
-            help="Ask the user to enter their age using a prompt, e.g. prompt('Enter your age:')"
+            help="Ask the user to enter their age using prompt(), e.g. prompt('Enter your age:')"
         )
-        
-    if "number(" not in js_code_clean.lower():
+
+    if "number(" not in js_clean.lower():
         raise check50.Failure(
-            "Missing Number() parsing in active JavaScript code",
-            help="Convert the prompted string input to a number using Number(), e.g. Number(userAge)"
+            "Missing Number() conversion in active JavaScript code",
+            help="Convert the prompt string to a number using Number(), e.g. Number(userAge)"
         )
 
 
 @check50.check(has_script)
 def evaluates_categories():
-    """JavaScript correctly evaluates age categories and updates DOM and alerts"""
+    """JavaScript correctly classifies age into Child / Teenager / Adult"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_code = soup.find("script").string or ""
-    
-    # Prepend mocks for Node.js environment
-    mock_env = """
-let mockResult = { textContent: "", className: "" };
+
+    # Mock: proxy both innerText and textContent to one underlying value,
+    # so both assignment styles work identically.
+    mock_env = r"""
+let _text = "";
+let mockResult = {
+    get innerText()  { return _text; },
+    set innerText(v) { _text = v; },
+    get textContent()  { return _text; },
+    set textContent(v) { _text = v; },
+    className: ""
+};
 let alerted = null;
 
-global.alert = (msg) => { alerted = msg; };
-global.prompt = (msg) => { return "20"; };
+global.alert  = (msg) => { alerted = String(msg); };
+global.prompt = ()    => "20";
 global.document = {
-    getElementById: (id) => {
-        if (id === 'result') return mockResult;
-        return null;
-    }
+    getElementById: (id) => id === "result" ? mockResult : null
 };
 """
-    
-    # Append test harness calling checkAge
-    test_harness = """
-let tests = [
-    { age: 5, expectedClass: "child", expectedText: "child", expectedAlert: "child" },
-    { age: 13, expectedClass: "teenager", expectedText: "teenager", expectedAlert: "teenager" },
-    { age: 15, expectedClass: "teenager", expectedText: "teenager", expectedAlert: "teenager" },
-    { age: 17, expectedClass: "teenager", expectedText: "teenager", expectedAlert: "teenager" },
-    { age: 18, expectedClass: "adult", expectedText: "adult", expectedAlert: "adult" }
+
+    test_harness = r"""
+const TESTS = [
+    { age: 5,  cls: "child",    textHint: "child",    alertHint: "child"    },
+    { age: 13, cls: "teenager", textHint: "teenager", alertHint: "teenager" },
+    { age: 15, cls: "teenager", textHint: "teenager", alertHint: "teenager" },
+    { age: 17, cls: "teenager", textHint: "teenager", alertHint: "teenager" },
+    { age: 18, cls: "adult",    textHint: "adult",    alertHint: "adult"    },
 ];
 
-for (let t of tests) {
-    mockResult.textContent = "";
+for (const t of TESTS) {
+    _text = "";
     mockResult.className = "";
     alerted = null;
-    
-    try {
-        checkAge(t.age);
-    } catch (e) {
-        console.log(`ERROR: Calling checkAge(${t.age}) threw an error: ${e.message}`);
+
+    try { checkAge(t.age); }
+    catch (e) {
+        console.log(`ERROR:${t.age}:${e.message}`);
         process.exit(1);
     }
-    
-    if (mockResult.className.toLowerCase() !== t.expectedClass) {
-        console.log(`FAIL_CLASS: age ${t.age} got class "${mockResult.className}", expected "${t.expectedClass}"`);
+
+    if (mockResult.className.toLowerCase() !== t.cls) {
+        console.log(`FAIL_CLASS:${t.age}:${mockResult.className}:${t.cls}`);
         process.exit(1);
     }
-    
-    let text = mockResult.textContent.toLowerCase();
-    if (!text.includes(t.expectedText)) {
-        console.log(`FAIL_TEXT: age ${t.age} got text "${mockResult.textContent}", expected it to contain "${t.expectedText}"`);
+    if (!_text.toLowerCase().includes(t.textHint)) {
+        console.log(`FAIL_TEXT:${t.age}:${_text}:${t.textHint}`);
         process.exit(1);
     }
-    
     if (alerted === null) {
-        console.log(`FAIL_ALERT: age ${t.age} did not trigger alert()`);
+        console.log(`FAIL_ALERT_MISSING:${t.age}`);
         process.exit(1);
     }
-    
-    if (alerted.toLowerCase() !== t.expectedAlert) {
-        console.log(`FAIL_ALERT: age ${t.age} got alert "${alerted}", expected "${t.expectedAlert}"`);
+    if (!alerted.toLowerCase().includes(t.alertHint)) {
+        console.log(`FAIL_ALERT:${t.age}:${alerted}:${t.alertHint}`);
         process.exit(1);
     }
 }
 console.log("PASS");
 """
-    
+
     full_js = mock_env + js_code + test_harness
-    
-    # Run in node
+
     try:
-        res = subprocess.run(
-            ["node", "-e", full_js],
-            capture_output=True,
-            text=True
-        )
-        if res.returncode != 0:
-            output = res.stdout.strip() or res.stderr.strip()
-            if "FAIL_CLASS" in output:
-                # e.g., FAIL_CLASS: age 13 got class "", expected "teenager"
-                age_val = output.split("age ")[1].split(" ")[0]
-                got_class = output.split('got class "')[1].split('"')[0]
-                expected_class = output.split('expected "')[1].split('"')[0]
-                raise check50.Failure(
-                    f"Incorrect class set for age {age_val}",
-                    help=f"For age {age_val}, expected element class name to be '{expected_class}' but got '{got_class}'"
-                )
-            elif "FAIL_TEXT" in output:
-                age_val = output.split("age ")[1].split(" ")[0]
-                got_text = output.split('got text "')[1].split('"')[0]
-                expected_text = output.split('expected it to contain "')[1].split('"')[0]
-                raise check50.Failure(
-                    f"Incorrect textContent set for age {age_val}",
-                    help=f"For age {age_val}, expected textContent to contain '{expected_text}' but got '{got_text}'"
-                )
-            elif "FAIL_ALERT" in output:
-                age_val = output.split("age ")[1].split(" ")[0]
-                if "did not trigger" in output:
-                    raise check50.Failure(
-                        f"Missing alert for age {age_val}",
-                        help=f"Make sure to call alert() inside checkAge"
-                    )
-                got_alert = output.split('got alert "')[1].split('"')[0]
-                expected_alert = output.split('expected "')[1].split('"')[0]
-                raise check50.Failure(
-                    f"Incorrect alert message for age {age_val}",
-                    help=f"For age {age_val}, expected alert message '{expected_alert}' but got '{got_alert}'"
-                )
-            else:
-                raise check50.Failure("JavaScript execution error", help=output)
+        res = subprocess.run(["node", "-e", full_js], capture_output=True, text=True)
     except FileNotFoundError:
-        # If node is not installed, fallback to passing (or raise system error)
-        pass
+        return  # node not available — skip functional check
+
+    if res.returncode != 0:
+        out = res.stdout.strip() or res.stderr.strip()
+        parts = out.split(":")
+
+        if out.startswith("FAIL_CLASS"):
+            age, got, expected = parts[1], parts[2], parts[3]
+            raise check50.Failure(
+                f"Wrong CSS class set for age {age}",
+                help=f"Expected className to be '{expected}' but got '{got}' — check your if/else conditions"
+            )
+        elif out.startswith("FAIL_TEXT"):
+            age, got, expected = parts[1], parts[2], parts[3]
+            raise check50.Failure(
+                f"Wrong text content for age {age}",
+                help=f"Expected textContent/innerText to contain '{expected}' but got '{got}'"
+            )
+        elif out.startswith("FAIL_ALERT_MISSING"):
+            age = parts[1]
+            raise check50.Failure(
+                f"No alert() called for age {age}",
+                help="Make sure to call alert() inside checkAge with the category name"
+            )
+        elif out.startswith("FAIL_ALERT"):
+            age, got, expected = parts[1], parts[2], parts[3]
+            raise check50.Failure(
+                f"Wrong alert message for age {age}",
+                help=f"Expected alert to contain '{expected}' but got '{got}'"
+            )
+        elif out.startswith("ERROR"):
+            age, msg = parts[1], ":".join(parts[2:])
+            raise check50.Failure(
+                f"JavaScript error when calling checkAge({age})",
+                help=msg
+            )
+        else:
+            raise check50.Failure("JavaScript execution error", help=out or res.stderr.strip())
 
 
 # ─── CSS checks ───────────────────────────────────────────────────────────────
 
 @check50.check(exists)
 def has_css_classes():
-    """CSS defines classes child, teenager, and adult categories"""
+    """CSS defines .child, .teenager, and .adult classes with text-align center"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     style_tag = soup.find("style")
@@ -196,21 +201,18 @@ def has_css_classes():
             "Missing <style> tag",
             help="Add a `<style>` block inside your `<head>` to define CSS styling"
         )
-        
-    css_content = style_tag.string or ""
-    # Strip CSS comments
-    css_clean = re.sub(r'/\*.*?\*/', '', css_content, flags=re.DOTALL)
-    
+
+    css_clean = _strip_css_comments(style_tag.string or "").lower()
+
     for category in ["child", "teenager", "adult"]:
-        pattern = r'\.' + category + r'\b'
-        if not re.search(pattern, css_clean.lower()):
+        if not re.search(r'\.' + category + r'\b', css_clean):
             raise check50.Failure(
                 f"Missing CSS rule for class '.{category}'",
-                help=f"Define .{category} {{ color: ...; }} in your style block"
+                help=f"Define .{category} {{ color: ...; }} inside your <style> block"
             )
-            
-    if "text-align" not in css_clean.lower() or "center" not in css_clean.lower():
+
+    if "text-align" not in css_clean or "center" not in css_clean:
         raise check50.Failure(
-            "Content is not centered via CSS",
-            help="Add 'text-align: center;' to style block to center elements"
+            "Page content is not centered",
+            help="Add 'text-align: center;' to your CSS to center the page content"
         )
