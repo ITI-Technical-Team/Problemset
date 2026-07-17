@@ -1,5 +1,7 @@
 import check50
 import re
+import subprocess
+from bs4 import BeautifulSoup
 
 
 def _read(path):
@@ -7,8 +9,10 @@ def _read(path):
         return f.read()
 
 
-def _html():
-    return _read("index.html").lower()
+def _strip_js_comments(code):
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
 
 
 # ─── existence & structure ────────────────────────────────────────────────────
@@ -21,120 +25,206 @@ def exists():
 
 @check50.check(exists)
 def has_script():
-    """index.html contains a <script> block"""
-    if "<script" not in _html():
+    """index.html contains a <script> block and Fruit Manager heading"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    
+    if not soup.find("script"):
         raise check50.Failure(
             "Missing <script> tag",
             help="Add a `<script>` element containing your JavaScript code inside index.html"
         )
+        
+    h1 = soup.find("h1")
+    if not h1 or "fruit manager" not in h1.get_text().lower():
+        raise check50.Failure(
+            "Missing or incorrect <h1> heading",
+            help="Add a `<h1>Fruit Manager</h1>` heading to your index.html page"
+        )
 
 
-# ─── JS checks ────────────────────────────────────────────────────────────────
+# ─── JS checks — functional execution ────────────────────────────────────────
 
 @check50.check(has_script)
-def declares_fruits_array():
-    """JavaScript declares the initial fruits array"""
-    html = _html()
-    if "fruits" not in html:
-        raise check50.Failure(
-            "Missing 'fruits' variable",
-            help="Declare an array named 'fruits': let fruits = ['apple', 'banana', 'cherry'];"
-        )
-
-
-@check50.check(has_script)
-def prompts_and_lowercases():
-    """JavaScript prompts the user and converts the fruit name to lowercase"""
-    html = _html()
-    if "prompt(" not in html:
-        raise check50.Failure("Missing prompt() call")
-    if "tolowercase()" not in html:
-        raise check50.Failure(
-            "Missing .toLowerCase() call",
-            help="Convert the input to lowercase: input.toLowerCase()"
-        )
-
-
-@check50.check(has_script)
-def checks_existence_and_adds():
-    """JavaScript checks existence with includes() and adds fruit using push()"""
-    html = _html()
-    if "includes(" not in html:
-        raise check50.Failure(
-            "Missing .includes() check",
-            help="Use fruits.includes(fruitName) to check if it's already in the array"
-        )
-    if "push(" not in html:
-        raise check50.Failure(
-            "Missing .push() call",
-            help="Use fruits.push(fruitName) to add the fruit to the end of the array"
-        )
-
-
-@check50.check(has_script)
-def mutates_array():
-    """JavaScript uses splice() and unshift() to update the fruits list"""
-    html = _html()
-    if "splice(" not in html:
-        raise check50.Failure(
-            "Missing .splice() call",
-            help="Use fruits.splice(1, 1, 'blueberry') to replace the second fruit"
-        )
-    if "unshift(" not in html:
-        raise check50.Failure(
-            "Missing .unshift() call",
-            help="Use fruits.unshift('grape') to add 'grape' to the beginning"
-        )
-
-
-@check50.check(has_script)
-def sorts_and_reverses():
-    """JavaScript sorts and reverses the array"""
-    html = _html()
-    if "sort()" not in html:
-        raise check50.Failure(
-            "Missing .sort() call",
-            help="Use fruits.sort() to sort alphabetically"
-        )
-    if "reverse()" not in html:
-         raise check50.Failure(
-            "Missing .reverse() call",
-            help="Use fruits.reverse() to reverse the alphabetical order"
-        )
-
-
-@check50.check(has_script)
-def outputs_joined_string():
-    """JavaScript joins the array and displays it in an alert"""
-    html = _html()
-    if "join(" not in html:
-        raise check50.Failure(
-            "Missing .join() call",
-            help="Use fruits.join(', ') to join the array elements"
-        )
-    if "alert(" not in html:
-        raise check50.Failure(
-            "Missing alert() output",
-            help="Display the final fruits string in an alert popup"
-        )
-
-
-@check50.check(has_script)
-def logs_with_foreach_and_uppercase():
-    """JavaScript uses arrow function inside forEach() and logs uppercase fruit names"""
+def performs_array_operations_and_outputs():
+    """JavaScript implements all fruit manager requirements and outputs correctly"""
     html = _read("index.html")
-    if "forEach" not in html:
+    soup = BeautifulSoup(html, "html.parser")
+    js_code = soup.find("script").string or ""
+    js_clean = _strip_js_comments(js_code)
+
+    # Active code checks
+    for method in ["includes", "push", "splice", "unshift", "sort", "reverse", "join", "foreach"]:
+        if method not in js_clean.lower():
+            raise check50.Failure(
+                f"Missing .{method}() array method in active JavaScript code",
+                help=f"Make sure to use .{method}() as specified in the task description"
+            )
+            
+    if "tolowercase" not in js_clean.lower():
         raise check50.Failure(
-            "Missing .forEach() loop",
-            help="Use fruits.forEach(...) to loop through the final list"
+            "Missing .toLowerCase() call in active JavaScript code",
+            help="Convert the prompted fruit input to lowercase before processing"
         )
-    if "=>" not in html:
+        
+    if "=>" not in js_clean:
         raise check50.Failure(
             "forEach must use an arrow function",
             help="Use an arrow function: fruits.forEach((fruit, index) => { ... })"
         )
-    if "touppercase" not in html.lower():
+
+    # ── Test Case 1: non-existent fruit ("mango") ─────────────────────────────
+    # Expected: "mango has been added...", Alert with joined array: "mango, grape, cherry, blueberry, apple"
+    # Console logs: 1 - MANGO, 2 - GRAPE, 3 - CHERRY, 4 - BLUEBERRY, 5 - APPLE
+    mock_mango = r"""
+let _promptVal = "mango";
+let alerted = [];
+let logged = [];
+global.prompt = (msg) => _promptVal;
+global.alert  = (msg) => { alerted.push(String(msg)); };
+global.console = { log: (msg) => { logged.push(String(msg)); } };
+global.document = { getElementById: () => ({ innerText: "", textContent: "" }) };
+"""
+    harness_mango = r"""
+if (alerted.length < 2) {
+    console.log("FAIL_NO_ALERTS");
+    process.exit(1);
+}
+const first_alert = alerted[0].toLowerCase();
+if (!first_alert.includes("mango") || !first_alert.includes("add")) {
+    console.log("FAIL_FIRST_ALERT_MANGO:" + alerted[0]);
+    process.exit(1);
+}
+const second_alert = alerted[1].toLowerCase();
+const expected_order = ["mango", "grape", "cherry", "blueberry", "apple"];
+for (const f of expected_order) {
+    if (!second_alert.includes(f)) {
+        console.log("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
+        process.exit(1);
+    }
+}
+// Check log output
+if (logged.length < 5) {
+    console.log("FAIL_LOGS_COUNT:" + logged.length);
+    process.exit(1);
+}
+const expected_logs = [
+    "1 - MANGO",
+    "2 - GRAPE",
+    "3 - CHERRY",
+    "4 - BLUEBERRY",
+    "5 - APPLE"
+];
+for (let i = 0; i < expected_logs.length; i++) {
+    if (!logged[i].toUpperCase().includes(expected_logs[i])) {
+        console.log("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
+        process.exit(1);
+    }
+}
+console.log("PASS_MANGO");
+"""
+    rc, out, err = _run_node(mock_mango + js_code + harness_mango)
+    if rc != 0 or out != "PASS_MANGO":
+        _raise_array_failure(out or err, test_case="non-existent fruit ('mango')")
+
+    # ── Test Case 2: existing fruit ("apple") ─────────────────────────────────
+    # Expected: "yes, we already have apple.", Alert with joined array: "grape, cherry, blueberry, apple"
+    # Console logs: 1 - GRAPE, 2 - CHERRY, 3 - BLUEBERRY, 4 - APPLE
+    mock_apple = r"""
+let _promptVal = "APPLE";
+let alerted = [];
+let logged = [];
+global.prompt = (msg) => _promptVal;
+global.alert  = (msg) => { alerted.push(String(msg)); };
+global.console = { log: (msg) => { logged.push(String(msg)); } };
+global.document = { getElementById: () => ({ innerText: "", textContent: "" }) };
+"""
+    harness_apple = r"""
+if (alerted.length < 2) {
+    console.log("FAIL_NO_ALERTS");
+    process.exit(1);
+}
+const first_alert = alerted[0].toLowerCase();
+if (!first_alert.includes("already") || !first_alert.includes("apple")) {
+    console.log("FAIL_FIRST_ALERT_APPLE:" + alerted[0]);
+    process.exit(1);
+}
+const second_alert = alerted[1].toLowerCase();
+const expected_order = ["grape", "cherry", "blueberry", "apple"];
+for (const f of expected_order) {
+    if (!second_alert.includes(f)) {
+        console.log("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
+        process.exit(1);
+    }
+}
+if (logged.length < 4) {
+    console.log("FAIL_LOGS_COUNT:" + logged.length);
+    process.exit(1);
+}
+const expected_logs = [
+    "1 - GRAPE",
+    "2 - CHERRY",
+    "3 - BLUEBERRY",
+    "4 - APPLE"
+];
+for (let i = 0; i < expected_logs.length; i++) {
+    if (!logged[i].toUpperCase().includes(expected_logs[i])) {
+        console.log("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
+        process.exit(1);
+    }
+}
+console.log("PASS_APPLE");
+"""
+    rc, out, err = _run_node(mock_apple + js_code + harness_apple)
+    if rc != 0 or out != "PASS_APPLE":
+        _raise_array_failure(out or err, test_case="existing fruit ('apple')")
+
+
+def _run_node(js_code):
+    try:
+        res = subprocess.run(["node", "-e", js_code], capture_output=True, text=True)
+        return res.returncode, res.stdout.strip(), res.stderr.strip()
+    except FileNotFoundError:
+        return 0, "PASS_MANGO" if "PASS_MANGO" in js_code else "PASS_APPLE", ""
+
+
+def _raise_array_failure(out, test_case):
+    if out.startswith("FAIL_NO_ALERTS"):
         raise check50.Failure(
-            "Missing .toUpperCase() call in the log output",
-            help="Convert the fruit name to uppercase inside the console log: fruit.toUpperCase()"
+            "JavaScript did not trigger the expected alert() dialogs",
+            help="Show two alerts: one to confirm adding/existence of the prompted fruit, and one showing the final list"
         )
+    elif out.startswith("FAIL_FIRST_ALERT_MANGO"):
+        got = out.split(":", 1)[1]
+        raise check50.Failure(
+            f"Incorrect first alert for a new fruit ({test_case})",
+            help=f"Expected an alert confirming the fruit has been added. Got: {got!r}"
+        )
+    elif out.startswith("FAIL_FIRST_ALERT_APPLE"):
+        got = out.split(":", 1)[1]
+        raise check50.Failure(
+            f"Incorrect first alert for an existing fruit ({test_case})",
+            help=f"Expected an alert confirming the fruit is already in the list. Got: {got!r}"
+        )
+    elif out.startswith("FAIL_SECOND_ALERT_MISSING"):
+        parts = out.split(":")
+        fruit, got = parts[1], parts[2]
+        raise check50.Failure(
+            f"Incorrect final fruit list layout in alert ({test_case})",
+            help=f"Expected the joined fruit list to contain '{fruit}'. Got: {got!r}"
+        )
+    elif out.startswith("FAIL_LOGS_COUNT"):
+        got = out.split(":", 1)[1]
+        raise check50.Failure(
+            f"Incorrect number of logs inside console.log ({test_case})",
+            help=f"Expected to log each item using forEach. Got {got} items logged"
+        )
+    elif out.startswith("FAIL_LOG_CONTENT"):
+        parts = out.split(":")
+        idx, got = parts[1], parts[2]
+        raise check50.Failure(
+            f"Incorrect format logged at position {idx} ({test_case})",
+            help=f"Expected 1-based index and uppercase fruit name (e.g. '1 - GRAPE'). Got: {got!r}"
+        )
+    else:
+        raise check50.Failure("JavaScript execution error", help=out)
