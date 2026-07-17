@@ -1,14 +1,11 @@
 import check50
 import re
+from bs4 import BeautifulSoup
 
 
 def _read(path):
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
-
-
-def _lower(path):
-    return _read(path).lower()
 
 
 # ─── existence & basic structure ─────────────────────────────────────────────
@@ -32,24 +29,23 @@ def has_doctype():
 @check50.check(exists)
 def has_head_body():
     """food.html has <head> and <body>"""
-    lower = _lower("food.html")
-    for tag in ["<head", "<body"]:
-        if tag not in lower:
-            raise check50.Failure(
-                f"Missing {tag}> element",
-                help="Every HTML page needs <head> and <body>"
-            )
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.head:
+        raise check50.Failure("Missing <head> element", help="Every HTML page needs a <head> block")
+    if not soup.body:
+        raise check50.Failure("Missing <body> element", help="Every HTML page needs a <body> block")
 
 
 @check50.check(exists)
 def has_title_egyptian_food():
     """<title> reads 'Egyptian Food'"""
-    lower = _lower("food.html")
-    match = re.search(r'<title[^>]*>(.*?)</title>', lower, re.DOTALL)
-    if not match or "egyptian food" not in match.group(1):
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.title or "egyptian food" not in soup.title.get_text().lower():
         raise check50.Failure(
             "Expected <title>Egyptian Food</title>",
-            help="Set your <title> tag to 'Egyptian Food'"
+            help="Set your <title> tag text to 'Egyptian Food'"
         )
 
 
@@ -58,8 +54,9 @@ def has_title_egyptian_food():
 @check50.check(exists)
 def has_header_element():
     """page has a <header> element"""
-    lower = _lower("food.html")
-    if "<header" not in lower:
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("header"):
         raise check50.Failure(
             "Missing <header> element",
             help="Add a <header> at the top of <body> with the page title and subtitle"
@@ -68,25 +65,36 @@ def has_header_element():
 
 @check50.check(has_header_element)
 def header_contains_egyptian_food_text():
-    """<header> contains 'Egyptian Food' text"""
-    lower = _lower("food.html")
-    header_match = re.search(r'<header[^>]*>(.*?)</header>', lower, re.DOTALL)
-    if not header_match or "egyptian food" not in header_match.group(1):
+    """<header> contains a heading (e.g. <h1>) with 'Egyptian Food'"""
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    header = soup.find("header")
+    
+    # Must contain a heading element (h1, h2, h3, etc.)
+    heading = header.find(["h1", "h2", "h3", "h4", "h5", "h6"])
+    if not heading:
         raise check50.Failure(
-            "'Egyptian Food' heading not found inside <header>",
-            help="Add a heading (<h1> or similar) with 'Egyptian Food' inside your <header>"
+            "Missing heading tag inside <header>",
+            help="Add a heading tag (like <h1>) inside your <header> element"
+        )
+        
+    if "egyptian food" not in heading.get_text().lower():
+        raise check50.Failure(
+            f"Heading inside <header> does not contain 'Egyptian Food'",
+            help=f"Your heading tag should contain the text 'Egyptian Food'. Found: '{heading.get_text().strip()}'"
         )
 
 
 @check50.check(has_header_element)
 def header_contains_subtitle_paragraph():
     """<header> contains a <p> subtitle"""
-    lower = _lower("food.html")
-    header_match = re.search(r'<header[^>]*>(.*?)</header>', lower, re.DOTALL)
-    if not header_match or "<p" not in header_match.group(1):
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    header = soup.find("header")
+    if not header.find("p"):
         raise check50.Failure(
             "No <p> subtitle found inside <header>",
-            help="Add a <p>These are the most famous Egyptian food dishes</p> inside the <header>"
+            help="Add a <p> subtitle paragraph describing the page inside your <header>"
         )
 
 
@@ -95,7 +103,9 @@ def header_contains_subtitle_paragraph():
 @check50.check(exists)
 def has_table():
     """page has a <table> element"""
-    if "<table" not in _lower("food.html"):
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("table"):
         raise check50.Failure(
             "Missing <table> element",
             help="Build your food layout inside a <table>"
@@ -105,14 +115,13 @@ def has_table():
 @check50.check(has_table)
 def has_at_least_3_rows():
     """table has at least 3 <tr> rows"""
-    lower = _lower("food.html")
-    table_match = re.search(r'<table[^>]*>(.*?)</table>', lower, re.DOTALL)
-    if not table_match:
-        raise check50.Failure("Could not parse <table> element")
-    tr_count = len(re.findall(r'<tr[^>]*>', table_match.group(1)))
-    if tr_count < 3:
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    rows = table.find_all("tr")
+    if len(rows) < 3:
         raise check50.Failure(
-            f"Found {tr_count} row(s) in <table>, expected at least 3",
+            f"Found {len(rows)} row(s) in <table>, expected at least 3",
             help="Add at least 3 <tr> rows — one row per food dish"
         )
 
@@ -120,16 +129,15 @@ def has_at_least_3_rows():
 @check50.check(has_table)
 def each_row_has_2_cells():
     """each table row has exactly 2 <td> cells (text + image)"""
-    lower = _lower("food.html")
-    table_match = re.search(r'<table[^>]*>(.*?)</table>', lower, re.DOTALL)
-    if not table_match:
-        return
-    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', table_match.group(1), re.DOTALL)
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    rows = table.find_all("tr")
     for i, row in enumerate(rows):
-        td_count = len(re.findall(r'<td[^>]*>', row))
-        if td_count < 2:
+        cells = row.find_all("td")
+        if len(cells) != 2:
             raise check50.Failure(
-                f"Row {i+1} has {td_count} <td> cell(s), expected 2 (one for text, one for image)",
+                f"Row {i+1} has {len(cells)} <td> cell(s), expected 2 (one for text, one for image)",
                 help="Each <tr> should have exactly 2 <td> cells: one with <p> text, one with <img>"
             )
 
@@ -137,44 +145,61 @@ def each_row_has_2_cells():
 @check50.check(has_table)
 def has_paragraphs_in_cells():
     """table cells contain <p> text paragraphs"""
-    lower = _lower("food.html")
-    table_match = re.search(r'<table[^>]*>(.*?)</table>', lower, re.DOTALL)
-    if not table_match:
-        return
-    p_count = len(re.findall(r'<p[^>]*>', table_match.group(1)))
-    if p_count < 3:
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    paragraphs = table.find_all("p")
+    if len(paragraphs) < 3:
         raise check50.Failure(
-            f"Found {p_count} <p> element(s) inside the table, expected at least 3",
+            f"Found {len(paragraphs)} <p> element(s) inside the table, expected at least 3",
             help="Add a <p> description paragraph in one <td> of each row"
         )
 
 
 @check50.check(has_table)
 def has_at_least_3_images():
-    """table has at least 3 food images"""
-    lower = _lower("food.html")
-    table_match = re.search(r'<table[^>]*>(.*?)</table>', lower, re.DOTALL)
-    if not table_match:
-        return
-    img_count = len(re.findall(r'<img[^>]*>', table_match.group(1)))
-    if img_count < 3:
+    """table has at least 3 food images and referenced files exist"""
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    imgs = table.find_all("img")
+    
+    if len(imgs) < 3:
         raise check50.Failure(
-            f"Found {img_count} image(s) inside the table, expected at least 3",
-            help="Add an <img> of a food dish in one <td> of each row (at least 3 rows)"
+            f"Found {len(imgs)} image(s) inside the table, expected at least 3",
+            help="Add an <img> of a food dish in one <td> of each row"
         )
+        
+    for img in imgs:
+        src = img.get("src", "").strip()
+        if not src:
+            raise check50.Failure(
+                "An <img> tag is missing the 'src' attribute",
+                help="Make sure all <img> elements specify a source file/URL using src=\"...\""
+            )
+        # If it's a local file path (not starting with http://, https://, or data:), verify it exists
+        if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
+            try:
+                check50.exists(src)
+            except check50.Failure:
+                raise check50.Failure(
+                    f"Referenced image file '{src}' does not exist in your directory",
+                    help=f"Make sure you have downloaded or placed '{src}' in the same directory as food.html"
+                )
 
 
 @check50.check(has_table)
 def images_have_alt():
     """all <img> elements inside the table have alt attributes"""
-    lower = _lower("food.html")
-    table_match = re.search(r'<table[^>]*>(.*?)</table>', lower, re.DOTALL)
-    if not table_match:
-        return
-    imgs = re.findall(r'<img[^>]*>', table_match.group(1))
+    html = _read("food.html")
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    imgs = table.find_all("img")
     for img in imgs:
-        if "alt=" not in img:
+        if not img.get("alt"):
+            # Construct a snippet for the error message
+            img_snippet = str(img)[:60]
             raise check50.Failure(
-                f"An <img> inside the table is missing the alt attribute: {img[:60]}",
-                help="Add alt='description of the dish' to every <img> tag"
+                f"An <img> inside the table is missing the alt attribute: {img_snippet}",
+                help="Add alt=\"description of the dish\" to every <img> tag"
             )
