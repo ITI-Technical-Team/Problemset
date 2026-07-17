@@ -159,6 +159,15 @@ def has_figure_with_img_and_figcaption():
             "The <img> tag inside <figure> is missing a 'src' attribute",
             help="Make sure your <img> element specifies a source file/URL using src=\"...\""
         )
+    # If it's a local file path (not starting with http://, https://, or data:), verify it exists
+    if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
+        try:
+            check50.exists(src)
+        except check50.Failure:
+            raise check50.Failure(
+                f"Referenced image file '{src}' does not exist in your directory",
+                help=f"Make sure you have placed the image file '{src}' in the same directory as index.html"
+            )
 
 
 @check50.check(exists)

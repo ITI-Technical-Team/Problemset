@@ -3,6 +3,12 @@ check50:
   files: &check50_files
     - !exclude "*"
     - !require food.html
+    - !include *.jpg
+    - !include *.jpeg
+    - !include *.png
+    - !include *.gif
+    - !include *.svg
+    - !include *.webp
 
 submit50:
   files: *check50_files

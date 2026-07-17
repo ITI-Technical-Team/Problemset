@@ -4,6 +4,12 @@ check50:
     - !exclude "*"
     - !require index.html
     - !require contact.html
+    - !include *.jpg
+    - !include *.jpeg
+    - !include *.png
+    - !include *.gif
+    - !include *.svg
+    - !include *.webp
 
 submit50:
   files: *check50_files
