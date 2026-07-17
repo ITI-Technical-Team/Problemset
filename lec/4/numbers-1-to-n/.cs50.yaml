@@ -1,0 +1,7 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require numbers-1-to-n.cpp
+
+submit50:
+  files: *check50_files
