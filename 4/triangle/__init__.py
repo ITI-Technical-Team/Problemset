@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """triangle.cpp compiles successfully"""
-    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG triangle.cpp -o triangle").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG triangle.cpp -o triangle").exit(0)
 
 @check50.check(test_compile)
 def prints_size_3():

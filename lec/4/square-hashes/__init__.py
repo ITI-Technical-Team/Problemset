@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """square-hashes.cpp compiles successfully"""
-    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG square-hashes.cpp -o square-hashes").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG square-hashes.cpp -o square-hashes").exit(0)
 
 @check50.check(test_compile)
 def test_four():

@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """yes-no.cpp compiles successfully"""
-    check50.run("g++ -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG yes-no.cpp -o yes-no").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG yes-no.cpp -o yes-no").exit(0)
 
 @check50.check(test_compile)
 def test_y_upper():
