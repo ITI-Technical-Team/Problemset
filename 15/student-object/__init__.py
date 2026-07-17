@@ -159,11 +159,14 @@ if (logged.length < 2) {
     process.exit(1);
 }
 
-// Verify that logged entries mention each employee and their role
+// Verify that logged entries mention each employee and their role matching the format: Name: <name>, Role: <role>
 for (const emp of company.employees) {
     let found = false;
     for (const log of logged) {
-        if (log.toLowerCase().includes(emp.name.toLowerCase()) && log.toLowerCase().includes(emp.role.toLowerCase())) {
+        const normalized = log.toLowerCase();
+        const expectedName = "name: " + emp.name.toLowerCase();
+        const expectedRole = "role: " + emp.role.toLowerCase();
+        if (normalized.includes(expectedName) && normalized.includes(expectedRole)) {
             found = true;
             break;
         }
@@ -241,7 +244,7 @@ realLog("PASS");
             emp_name = out.split(":", 1)[1]
             raise check50.Failure(
                 f"Missing or incorrect console.log output for employee '{emp_name}'",
-                help=f"Make sure to log both the name and role of '{emp_name}' using console.log()"
+                help=f"Make sure to log each employee's name and role using console.log() matching the format: Name: {emp_name}, Role: <role>"
             )
         elif out.startswith("ERROR"):
             raise check50.Failure(
