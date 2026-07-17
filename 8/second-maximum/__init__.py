@@ -66,6 +66,12 @@ def test_reverse_sorted():
 
 
 @check50.check(test_compile)
+def test_second_maximum_after_maximum():
+    """handles second maximum occurring after the maximum"""
+    check50.run("./second-maximum").stdin("3\n10 5 8", prompt=False).stdout("8", regex=False).exit(0)
+
+
+@check50.check(test_compile)
 def test_random():
     """finds second maximum correctly on random distinct arrays"""
     for _ in range(10):
