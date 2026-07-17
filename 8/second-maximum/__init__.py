@@ -67,9 +67,10 @@ def test_reverse_sorted():
 
 @check50.check(test_compile)
 def test_random():
-    """finds second maximum correctly on random distinct array"""
-    n = random.randint(10, 50)
-    arr = random.sample(range(-1000, 1000), n)
-    expected = str(sorted(arr)[-2])
-    stdin_data = f"{n}\n" + " ".join(map(str, arr))
-    check50.run("./second-maximum").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)
+    """finds second maximum correctly on random distinct arrays"""
+    for _ in range(10):
+        n = random.randint(10, 50)
+        arr = random.sample(range(-1000, 1000), n)
+        expected = str(sorted(arr)[-2])
+        stdin_data = f"{n}\n" + " ".join(map(str, arr))
+        check50.run("./second-maximum").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)
