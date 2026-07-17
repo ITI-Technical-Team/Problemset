@@ -121,7 +121,7 @@ if (!Array.isArray(company.employees)) {
     realLog("FAIL_NO_EMPLOYEES");
     process.exit(1);
 }
-if (company.employees.length === 0) {
+if (company.employees.length < 3) {
     realLog("FAIL_EMPTY_EMPLOYEES");
     process.exit(1);
 }
@@ -208,7 +208,7 @@ realLog("PASS");
             )
         elif out.startswith("FAIL_EMPTY_EMPLOYEES"):
             raise check50.Failure(
-                "company.employees array is empty",
+                "company.employees array must contain at least 3 employee objects",
                 help="Add at least 3 employee objects inside company.employees"
             )
         elif out.startswith("FAIL_EMPLOYEE_FIELDS"):
