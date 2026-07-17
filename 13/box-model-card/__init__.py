@@ -1,15 +1,12 @@
 import check50
 import re
 import os
+from bs4 import BeautifulSoup
 
 
 def _read(path):
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
-
-
-def _html():
-    return _read("index.html").lower()
 
 
 def _get_css():
@@ -23,7 +20,33 @@ def _get_css():
     if os.path.exists("style.css"):
         css_content += "\n" + _read("style.css")
         
-    return css_content.lower()
+    return css_content
+
+
+def _normalize_selector(sel):
+    return re.sub(r'\s+', ' ', sel.strip().lower())
+
+
+def _parse_css(css_text):
+    """Parse CSS into a dict: {selector: {property: value}}"""
+    # Strip comments first
+    css_clean = re.sub(r'/\*.*?\*/', '', css_text, flags=re.DOTALL)
+    
+    rules = {}
+    matches = re.findall(r'([^{]+)\{([^}]+)\}', css_clean)
+    for selector, body in matches:
+        selectors = [_normalize_selector(s) for s in selector.split(",")]
+        props = {}
+        for decl in body.split(";"):
+            if ":" in decl:
+                p, v = decl.split(":", 1)
+                props[p.strip().lower()] = v.strip().lower()
+        for sel in selectors:
+            if sel in rules:
+                rules[sel].update(props)
+            else:
+                rules[sel] = props
+    return rules
 
 
 # ─── existence & structure ────────────────────────────────────────────────────
@@ -37,13 +60,17 @@ def exists():
 @check50.check(exists)
 def has_navbar():
     """index.html has a <nav> element with class 'navbar'"""
-    html = _html()
-    if "<nav" not in html:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    nav = soup.find("nav")
+    if not nav:
         raise check50.Failure(
             "Missing <nav> element",
             help="Add a `<nav>` tag to wrap your navigation links"
         )
-    if 'class="navbar"' not in html and "class='navbar'" not in html and 'class=navbar' not in html:
+    # Support class checks case-insensitively or via split classes
+    classes = nav.get("class", [])
+    if "navbar" not in [c.lower() for c in classes]:
         raise check50.Failure(
             "The <nav> element must have class='navbar'",
             help="Update your nav tag to: <nav class=\"navbar\">"
@@ -53,22 +80,20 @@ def has_navbar():
 @check50.check(has_navbar)
 def has_three_links():
     """the navigation bar has at least 3 anchor links (Home, About, Contact)"""
-    html = _html()
-    nav_block_match = re.search(r'<nav[^>]*>(.*?)</nav>', html, re.DOTALL)
-    if not nav_block_match:
-        raise check50.Failure("Could not parse the <nav> block")
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    nav = soup.find("nav")
+    if not nav:
+        raise check50.Failure("Could not find <nav> element")
         
-    nav_content = nav_block_match.group(1)
-    a_tags = re.findall(r'<a[^>]*>(.*?)</a>', nav_content, re.DOTALL)
-    
+    a_tags = nav.find_all("a")
     if len(a_tags) < 3:
         raise check50.Failure(
             f"Found {len(a_tags)} link(s) inside <nav>, expected at least 3",
             help="Add at least 3 anchor links: Home, About, and Contact"
         )
         
-    # Check for labels (case-insensitive)
-    labels = [tag.strip().lower() for tag in a_tags]
+    labels = [tag.get_text().strip().lower() for tag in a_tags]
     expected = ["home", "about", "contact"]
     for exp in expected:
         if not any(exp in lbl for lbl in labels):
@@ -83,70 +108,82 @@ def has_three_links():
 @check50.check(has_navbar)
 def checks_navbar_css():
     """CSS sets dark background, white text links, no default underline, spacing, and hover underline"""
-    css = _get_css()
+    css_text = _get_css()
+    rules = _parse_css(css_text)
     
-    # 1. Dark Background on navbar
-    # Find background-color inside .navbar rule
-    navbar_match = re.search(r'\.navbar\s*\{([^}]+)\}', css, re.DOTALL)
-    if not navbar_match:
-        raise check50.Failure("Could not find CSS rules for class '.navbar'")
-    navbar_rules = navbar_match.group(1)
-    if "background" not in navbar_rules:
+    # 1. Container selector (normally .navbar or nav.navbar or nav)
+    container_sel = None
+    for sel in [".navbar", "nav.navbar", "nav"]:
+        if sel in rules:
+            container_sel = sel
+            break
+            
+    if not container_sel:
         raise check50.Failure(
-            "class '.navbar' is missing a background or background-color property",
-            help="Add a dark background color: 'background-color: #222;'"
+            "Could not find CSS rules for class '.navbar' or tag 'nav'",
+            help="Define styling for your navbar: .navbar { ... }"
         )
-    # Check if they used #222, #333, #000, black, rgb, etc.
-    # We will pass any background-color configuration
-    
-    # 2. navbar a styles
-    link_match = re.search(r'\.navbar\s+a\s*\{([^}]+)\}', css, re.DOTALL)
-    if not link_match:
-        # Fallback to general nav a
-        link_match = re.search(r'nav\s+a\s*\{([^}]+)\}', css, re.DOTALL)
         
-    if not link_match:
+    container_props = rules[container_sel]
+    # Check background or background-color
+    if not any(k in container_props for k in ["background", "background-color"]):
+        raise check50.Failure(
+            "Navbar container (.navbar) is missing a background or background-color property",
+            help="Add a dark background color, e.g., 'background-color: #222;' inside your .navbar rule"
+        )
+        
+    # 2. navbar a styles
+    link_sel = None
+    for sel in [".navbar a", "nav.navbar a", "nav a", ".navbar > a"]:
+        if sel in rules:
+            link_sel = sel
+            break
+            
+    if not link_sel:
         raise check50.Failure(
             "Missing CSS rules for links in the navbar (e.g. '.navbar a')",
             help="Define styling for links inside the navbar: .navbar a { ... }"
         )
         
-    link_rules = link_match.group(1)
+    link_props = rules[link_sel]
     
-    # 2a. Color: white
-    if "color" not in link_rules:
+    # 2a. Color: white/light
+    if "color" not in link_props:
         raise check50.Failure(
             "Navbar links are missing a color property",
             help="Add 'color: white;' to your navbar links style"
         )
         
     # 2b. text-decoration: none
-    if "text-decoration" not in link_rules or "none" not in link_rules:
+    if link_props.get("text-decoration") != "none":
         raise check50.Failure(
             "Navbar links must remove the default underline",
             help="Add 'text-decoration: none;' to your navbar links style"
         )
         
-    # 2c. spacing (margin-right or padding)
-    if "margin-right" not in link_rules and "margin" not in link_rules and "padding" not in link_rules:
+    # 2c. spacing (margin or padding)
+    has_spacing = any(k in link_props for k in ["margin", "margin-right", "margin-left", "padding", "padding-right", "padding-left"])
+    if not has_spacing:
         raise check50.Failure(
             "Navbar links should have spacing between them",
-            help="Add spacing using 'margin-right: 20px;' to separate the links"
+            help="Add spacing using 'margin-right: 20px;' or padding inside your links rule"
         )
         
     # 3. Hover state: underline
-    hover_match = re.search(r'\.navbar\s+a\s*:\s*hover\s*\{([^}]+)\}', css, re.DOTALL)
-    if not hover_match:
-        hover_match = re.search(r'nav\s+a\s*:\s*hover\s*\{([^}]+)\}', css, re.DOTALL)
-        
-    if not hover_match:
+    hover_sel = None
+    for sel in [".navbar a:hover", "nav.navbar a:hover", "nav a:hover", ".navbar > a:hover"]:
+        if sel in rules:
+            hover_sel = sel
+            break
+            
+    if not hover_sel:
         raise check50.Failure(
             "Missing hover style for navbar links (e.g. '.navbar a:hover')",
             help="Define hover effects: .navbar a:hover { ... }"
         )
         
-    hover_rules = hover_match.group(1)
-    if "text-decoration" not in hover_rules or "underline" not in hover_rules:
+    hover_props = rules[hover_sel]
+    if "underline" not in hover_props.get("text-decoration", ""):
         raise check50.Failure(
             "Hover state must underline the link",
             help="Add 'text-decoration: underline;' inside the :hover style rule"

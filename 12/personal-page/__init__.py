@@ -1,14 +1,11 @@
 import check50
 import re
+from bs4 import BeautifulSoup
 
 
 def _read(path):
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
-
-
-def _lower(path):
-    return _read(path).lower()
 
 
 # ══════════════════════════════════════════════════════════
@@ -35,31 +32,34 @@ def has_doctype():
 @check50.check(exists)
 def has_title():
     """index.html has a <title> inside <head>"""
-    lower = _lower("index.html")
-    if "<title" not in lower or "</title>" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.title or not soup.title.get_text().strip():
         raise check50.Failure(
             "Missing <title> element inside <head>",
-            help="Add <title>Your Page Title</title> inside the <head> section"
+            help="Add a `<title>Your Page Title</title>` inside the `<head>` section of index.html"
         )
 
 
 @check50.check(exists)
 def has_header_tag():
     """index.html has a <header> element welcoming the visitor"""
-    lower = _lower("index.html")
-    if "<header" not in lower or "</header>" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("header"):
         raise check50.Failure(
             "Missing <header> element in index.html",
-            help="Add a <header>Welcome</header> at the top of <body>"
+            help="Add a `<header>Welcome</header>` inside your `<body>` tag"
         )
 
 
 @check50.check(exists)
 def has_two_paragraphs():
-    """index.html has at least 2 <p> elements"""
-    lower = _lower("index.html")
-    paras = re.findall(r'<p[^>]*>(.*?)</p>', lower, re.DOTALL)
-    non_empty = [p for p in paras if p.strip()]
+    """index.html has at least 2 non-empty <p> elements"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    paragraphs = soup.find_all("p")
+    non_empty = [p for p in paragraphs if p.get_text().strip()]
     if len(non_empty) < 2:
         raise check50.Failure(
             f"Found {len(non_empty)} non-empty <p> element(s), expected at least 2",
@@ -69,9 +69,10 @@ def has_two_paragraphs():
 
 @check50.check(exists)
 def has_strong():
-    """index.html has a <strong> element inside a paragraph"""
-    lower = _lower("index.html")
-    if "<strong>" not in lower and "<strong " not in lower:
+    """index.html has a <strong> element"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("strong"):
         raise check50.Failure(
             "Missing <strong> element",
             help="Make one of your paragraphs <strong>: <p><strong>text</strong></p>"
@@ -80,9 +81,10 @@ def has_strong():
 
 @check50.check(exists)
 def has_em():
-    """index.html has an <em> element inside a paragraph"""
-    lower = _lower("index.html")
-    if "<em>" not in lower and "<em " not in lower:
+    """index.html has an <em> element"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    if not soup.find("em"):
         raise check50.Failure(
             "Missing <em> element",
             help="Make one of your paragraphs <em>: <p><em>text</em></p>"
@@ -92,67 +94,90 @@ def has_em():
 @check50.check(exists)
 def has_ul_with_3_items():
     """index.html has a <ul> with at least 3 <li> items (favourite websites)"""
-    lower = _lower("index.html")
-    if "<ul" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    ul = soup.find("ul")
+    if not ul:
         raise check50.Failure(
             "Missing <ul> element",
-            help="Add <ul> with 3 favourite learning websites as <li> items"
+            help="Add a `<ul>` list containing your top 3 favourite learning websites as `<li>` items"
         )
-    ul_match = re.search(r'<ul[^>]*>(.*?)</ul>', lower, re.DOTALL)
-    if ul_match:
-        li_count = len(re.findall(r'<li[^>]*>', ul_match.group(1)))
-        if li_count < 3:
-            raise check50.Failure(
-                f"Found {li_count} <li> item(s) in <ul>, expected at least 3",
-                help="List your top 3 favourite websites for learning web development"
-            )
+    items = ul.find_all("li")
+    if len(items) < 3:
+        raise check50.Failure(
+            f"Found {len(items)} <li> item(s) in <ul>, expected at least 3",
+            help="Add at least 3 <li> items inside your <ul> list"
+        )
 
 
 @check50.check(exists)
 def has_ol_with_3_items():
     """index.html has an <ol> with at least 3 <li> items (skills)"""
-    lower = _lower("index.html")
-    if "<ol" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    ol = soup.find("ol")
+    if not ol:
         raise check50.Failure(
             "Missing <ol> element",
-            help="Add <ol> with at least 3 web development skills as <li> items"
+            help="Add a `<ol>` list containing at least 3 of your web development skills as `<li>` items"
         )
-    ol_match = re.search(r'<ol[^>]*>(.*?)</ol>', lower, re.DOTALL)
-    if ol_match:
-        li_count = len(re.findall(r'<li[^>]*>', ol_match.group(1)))
-        if li_count < 3:
-            raise check50.Failure(
-                f"Found {li_count} <li> item(s) in <ol>, expected at least 3",
-                help="List at least 3 skills (e.g. HTML, CSS, JavaScript) in your ordered list"
-            )
+    items = ol.find_all("li")
+    if len(items) < 3:
+        raise check50.Failure(
+            f"Found {len(items)} <li> item(s) in <ol>, expected at least 3",
+            help="Add at least 3 <li> items inside your <ol> list"
+        )
 
 
 @check50.check(exists)
 def has_figure_with_img_and_figcaption():
-    """index.html has a <figure> with <img> and <figcaption>"""
-    lower = _lower("index.html")
-    if "<figure" not in lower:
+    """index.html has a <figure> with <img> and <figcaption> and referenced files exist"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    figure = soup.find("figure")
+    if not figure:
         raise check50.Failure(
             "Missing <figure> element",
-            help="Wrap your image in <figure><img ...><figcaption>caption</figcaption></figure>"
+            help="Wrap your image in <figure><img src='...' alt='...'><figcaption>caption</figcaption></figure>"
         )
-    if "<figcaption" not in lower:
-        raise check50.Failure(
-            "Missing <figcaption> inside <figure>",
-            help="Add <figcaption>your caption text</figcaption> inside the <figure>"
-        )
-    if "<img" not in lower:
+    img = figure.find("img")
+    if not img:
         raise check50.Failure(
             "Missing <img> inside <figure>",
             help="Add an <img src='...' alt='...'> inside your <figure>"
         )
+    figcaption = figure.find("figcaption")
+    if not figcaption:
+        raise check50.Failure(
+            "Missing <figcaption> inside <figure>",
+            help="Add a <figcaption>caption</figcaption> inside your <figure>"
+        )
+        
+    # Check that referenced local image file actually exists
+    src = img.get("src", "").strip()
+    if not src:
+        raise check50.Failure(
+            "The <img> tag inside <figure> is missing a 'src' attribute",
+            help="Make sure your <img> element specifies a source file/URL using src=\"...\""
+        )
+    if not (src.startswith("http://") or src.startswith("https://") or src.startswith("data:")):
+        try:
+            check50.exists(src)
+        except check50.Failure:
+            raise check50.Failure(
+                f"Referenced image file '{src}' does not exist in your directory",
+                help=f"Make sure you have placed the image file '{src}' in the same directory as index.html"
+            )
 
 
 @check50.check(exists)
 def has_google_link():
     """index.html has a hyperlink to google.com"""
-    lower = _lower("index.html")
-    if "google.com" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    links = soup.find_all("a")
+    has_google = any("google.com" in (link.get("href") or "").lower() for link in links)
+    if not has_google:
         raise check50.Failure(
             "Missing hyperlink to google.com",
             help="Add <a href='https://www.google.com'>...</a> in a paragraph or figcaption"
@@ -162,8 +187,11 @@ def has_google_link():
 @check50.check(exists)
 def has_contact_page_link():
     """index.html links to contact.html"""
-    lower = _lower("index.html")
-    if "contact.html" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    links = soup.find_all("a")
+    has_contact = any((link.get("href") or "").strip() == "contact.html" for link in links)
+    if not has_contact:
         raise check50.Failure(
             "index.html does not link to contact.html",
             help="Add <a href='contact.html'>Contact Me</a> on your index page"
@@ -173,20 +201,20 @@ def has_contact_page_link():
 @check50.check(exists)
 def has_footer_with_copyright():
     """index.html has a <footer> with a copyright notice"""
-    lower = _lower("index.html")
-    if "<footer" not in lower:
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    footer = soup.find("footer")
+    if not footer:
         raise check50.Failure(
             "Missing <footer> element",
-            help="Add <footer>&copy; 2025 Your Name</footer> at the bottom of <body>"
+            help="Add a <footer>&copy; 2025 Your Name</footer> at the bottom of <body>"
         )
-    footer_match = re.search(r'<footer[^>]*>(.*?)</footer>', lower, re.DOTALL)
-    if footer_match:
-        content = footer_match.group(1)
-        if "copyright" not in content and "©" not in content and "&copy;" not in content and "©" not in content:
-            raise check50.Failure(
-                "<footer> does not contain a copyright notice",
-                help="Add &copy; or the © symbol inside your <footer>"
-            )
+    text = footer.get_text().lower()
+    if "copyright" not in text and "©" not in text and "&copy;" not in text and "©" not in text:
+        raise check50.Failure(
+            "<footer> does not contain a copyright notice",
+            help="Add &copy; or the © symbol inside your <footer>"
+        )
 
 
 # ══════════════════════════════════════════════════════════
@@ -206,9 +234,13 @@ def contact_has_doctype():
 @check50.check(exists)
 def contact_has_phone_or_email():
     """contact.html contains a phone number or email address"""
-    lower = _lower("contact.html")
-    has_phone = bool(re.search(r'\+?\d[\d\s\-]{6,}', lower))
-    has_email = "@" in lower
+    html = _read("contact.html")
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text().lower()
+    
+    has_phone = bool(re.search(r'\+?\d[\d\s\-]{6,}', text))
+    has_email = "@" in text
+    
     if not has_phone and not has_email:
         raise check50.Failure(
             "contact.html does not contain a phone number or email address",
@@ -219,8 +251,11 @@ def contact_has_phone_or_email():
 @check50.check(exists)
 def contact_has_back_link():
     """contact.html has an anchor link back to index.html"""
-    lower = _lower("contact.html")
-    if "index.html" not in lower:
+    html = _read("contact.html")
+    soup = BeautifulSoup(html, "html.parser")
+    links = soup.find_all("a")
+    has_back = any((link.get("href") or "").strip() == "index.html" for link in links)
+    if not has_back:
         raise check50.Failure(
             "contact.html does not link back to index.html",
             help="Add <a href='index.html'>Back to Home</a> in contact.html"
