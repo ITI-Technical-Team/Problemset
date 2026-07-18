@@ -32,9 +32,10 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """easy-array.cpp compiles successfully"""
-    proc = check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG easy-array.cpp -o easy-array 2>&1")
-    proc.stdout(output=None)
-    proc.exit(0)
+    import subprocess as _sp
+    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG easy-array.cpp -o easy-array", shell=True, capture_output=True, text=True)
+    if _res.returncode != 0:
+        raise check50.Failure(_res.stderr or _res.stdout)
 
 @check50.check(test_compile)
 def test_example():

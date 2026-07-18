@@ -9,9 +9,10 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """min-max.cpp compiles successfully"""
-    proc = check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG min-max.cpp -o min-max 2>&1")
-    proc.stdout(output=None)
-    proc.exit(0)
+    import subprocess as _sp
+    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG min-max.cpp -o min-max", shell=True, capture_output=True, text=True)
+    if _res.returncode != 0:
+        raise check50.Failure(_res.stderr or _res.stdout)
 
 def verify_min_max_output(out, a, b, c):
     tokens = out.split()

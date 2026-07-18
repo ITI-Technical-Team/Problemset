@@ -32,9 +32,10 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """hashes.cpp compiles successfully"""
-    proc = check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG hashes.cpp -o hashes 2>&1")
-    proc.stdout(output=None)
-    proc.exit(0)
+    import subprocess as _sp
+    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG hashes.cpp -o hashes", shell=True, capture_output=True, text=True)
+    if _res.returncode != 0:
+        raise check50.Failure(_res.stderr or _res.stdout)
 
 @check50.check(test_compile)
 def prints_3_hashes():
