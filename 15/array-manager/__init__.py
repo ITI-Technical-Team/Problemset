@@ -25,7 +25,7 @@ def exists():
 
 @check50.check(exists)
 def has_script():
-    """index.html contains a <script> block and Fruit Manager heading"""
+    """index.html contains a <script> block, title, and Fruit Manager heading"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
@@ -33,6 +33,13 @@ def has_script():
         raise check50.Failure(
             "Missing <script> tag",
             help="Add a `<script>` element containing your JavaScript code inside index.html"
+        )
+
+    title = soup.find("title")
+    if not title or "fruit manager" not in title.get_text().lower():
+        raise check50.Failure(
+            "Missing or incorrect <title> tag",
+            help="Add a `<title>Fruit Manager</title>` tag inside index.html"
         )
         
     h1 = soup.find("h1")
