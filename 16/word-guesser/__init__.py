@@ -227,6 +227,11 @@ if (!alerted.toLowerCase().includes("at least 3")) {
     console.log("FAIL_VALIDATION_ALERT_TEXT:" + alerted);
     process.exit(1);
 }
+// Check that execution stopped after alert (return must not be commented out)
+if (_messageHtml !== "") {
+    console.log("FAIL_NO_RETURN_AFTER_ALERT:" + _messageHtml);
+    process.exit(1);
+}
 
 // Boundary test: exactly 3-char name should be ACCEPTED (not alert)
 // This catches <= 3 instead of < 3
@@ -363,6 +368,11 @@ console.log("PASS");
             raise check50.Failure(
                 "Validation condition is too strict: a 3-character name should be accepted",
                 help="Use 'name.length < 3' (strictly less than 3), not 'name.length <= 3'. A name like 'Ali' (3 letters) is valid."
+            )
+        elif out.startswith("FAIL_NO_RETURN_AFTER_ALERT"):
+            raise check50.Failure(
+                "Code continues executing after the validation alert",
+                help="After calling alert(), add 'return;' to stop execution. Without return, the greeting will still be displayed even for invalid input."
             )
         elif out.startswith("FAIL_HAPPY_GREETING"):
             got = out.split(":", 1)[1]
