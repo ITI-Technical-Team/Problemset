@@ -228,6 +228,16 @@ if (!alerted.toLowerCase().includes("at least 3")) {
     process.exit(1);
 }
 
+// Boundary test: exactly 3-char name should be ACCEPTED (not alert)
+// This catches <= 3 instead of < 3
+_nameInputVal = "Ali";
+alerted = null;
+eventListeners["showBtn_click"]();
+if (alerted !== null) {
+    console.log("FAIL_VALIDATION_BOUNDARY:" + alerted);
+    process.exit(1);
+}
+
 // Clear outputs to test valid click
 _messageHtml = "";
 _quoteText = "";
@@ -348,6 +358,11 @@ console.log("PASS");
             raise check50.Failure(
                 "Validation alert message is incorrect",
                 help=f"Expected alert to contain 'at least 3 letters' or similar message. Got: {got!r}"
+            )
+        elif out.startswith("FAIL_VALIDATION_BOUNDARY"):
+            raise check50.Failure(
+                "Validation condition is too strict: a 3-character name should be accepted",
+                help="Use 'name.length < 3' (strictly less than 3), not 'name.length <= 3'. A name like 'Ali' (3 letters) is valid."
             )
         elif out.startswith("FAIL_HAPPY_GREETING"):
             got = out.split(":", 1)[1]
