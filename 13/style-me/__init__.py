@@ -9,7 +9,9 @@ def _read(path):
 
 
 def _html():
-    return _read("index.html").lower()
+    html = _read("index.html")
+    clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    return clean_html.lower()
 
 
 def _get_css():
@@ -17,7 +19,8 @@ def _get_css():
     css_content = ""
     # Check index.html style tags
     html = _read("index.html")
-    style_blocks = re.findall(r'<style[^>]*>(.*?)</style>', html, re.DOTALL | re.IGNORECASE)
+    clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    style_blocks = re.findall(r'<style[^>]*>(.*?)</style>', clean_html, re.DOTALL | re.IGNORECASE)
     for block in style_blocks:
         css_content += "\n" + block
     
