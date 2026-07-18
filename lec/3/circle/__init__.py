@@ -9,7 +9,9 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """circle.cpp compiles successfully"""
-    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG circle.cpp -o circle 2>&1").exit(0)
+    proc = check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG circle.cpp -o circle 2>&1")
+    proc.stdout(output=None)
+    proc.exit(0)
 
 def verify_circle_output(out, r):
     tokens = out.split()
