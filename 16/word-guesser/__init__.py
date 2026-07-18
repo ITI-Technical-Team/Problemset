@@ -81,6 +81,18 @@ def verifies_dashboard_logic():
                 help=f"Make sure to implement event listeners and style changes as specified in the task description"
             )
 
+    # Enforce querySelector usage — getElementById is not allowed
+    if "getelementbyid" in js_clean.lower().replace(" ", ""):
+        raise check50.Failure(
+            "getElementById is not allowed",
+            help="The task requires using querySelector to select all DOM elements. Replace getElementById with querySelector, e.g. document.querySelector('#nameInput')"
+        )
+    if "queryselector" not in js_clean.lower().replace(" ", ""):
+        raise check50.Failure(
+            "Missing querySelector usage",
+            help="Use querySelector to select all DOM elements, e.g. document.querySelector('#nameInput')"
+        )
+
     # Node environment setup to mock DOM querySelector, events, alert, styling, and Math.random()
     mock_env = r"""
 let _nameInputVal = "";
@@ -159,9 +171,6 @@ global.document = {
         sel = sel.replace(/[#.]/g, "").trim();
         if (sel === "body") return mockBody;
         return elements[sel] || null;
-    },
-    getElementById: (id) => {
-        return elements[id] || null;
     }
 };
 """
