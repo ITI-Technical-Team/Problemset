@@ -124,7 +124,7 @@ const expected_logs = [
     "5 - APPLE"
 ];
 for (let i = 0; i < expected_logs.length; i++) {
-    if (!logged[i].toUpperCase().includes(expected_logs[i])) {
+    if (!logged[i].includes(expected_logs[i])) {
         realLog("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
         process.exit(1);
     }
@@ -177,7 +177,7 @@ const expected_logs = [
     "4 - APPLE"
 ];
 for (let i = 0; i < expected_logs.length; i++) {
-    if (!logged[i].toUpperCase().includes(expected_logs[i])) {
+    if (!logged[i].includes(expected_logs[i])) {
         realLog("FAIL_LOG_CONTENT:" + i + ":" + logged[i]);
         process.exit(1);
     }

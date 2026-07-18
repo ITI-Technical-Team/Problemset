@@ -58,15 +58,27 @@ def exists():
 
 @check50.check(exists)
 def has_html_structure():
-    """index.html contains heading #title and 3 paragraphs with class 'info'"""
+    """index.html contains title, heading #title, and 3 paragraphs with class 'info' and correct text"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
+    title_tag = soup.find("title")
+    if not title_tag or "dom paragraph editor" not in title_tag.get_text().lower():
+        raise check50.Failure(
+            "Missing or incorrect <title> tag",
+            help="Add a `<title>DOM Paragraph Editor</title>` tag to your index.html page"
+        )
+
     title = soup.find(id="title")
     if not title:
         raise check50.Failure(
             "Missing heading with id='title'",
             help="Add a heading: <h1 id=\"title\">Welcome to JavaScript!</h1>"
+        )
+    if "welcome to javascript!" not in title.get_text().lower():
+        raise check50.Failure(
+            "Incorrect heading text for id='title'",
+            help="The heading text must be exactly: 'Welcome to JavaScript!'"
         )
         
     paragraphs = soup.find_all("p", class_="info")
@@ -75,6 +87,19 @@ def has_html_structure():
             f"Found {len(paragraphs)} paragraph(s) with class 'info', expected exactly 3",
             help="Add exactly three `<p class=\"info\">` elements to the page"
         )
+        
+    expected_texts = [
+        "this is the first paragraph.",
+        "this is the second paragraph.",
+        "this is the third paragraph."
+    ]
+    for i, p in enumerate(paragraphs):
+        p_text = p.get_text().lower().strip()
+        if expected_texts[i] not in p_text:
+            raise check50.Failure(
+                f"Incorrect initial text for paragraph at index {i}",
+                help=f"Expected paragraph to contain: '{expected_texts[i]}'"
+            )
         
     btn = soup.find("button")
     if not btn:
@@ -261,4 +286,33 @@ def checks_css_styling():
          raise check50.Failure(
             "Missing CSS rules for class '.edited'",
             help="Style the edited span: .edited { color: green; font-weight: bold; }"
+        )
+         
+    edited_props = rules[".edited"]
+    # Check color
+    color_val = edited_props.get("color")
+    if not color_val:
+         raise check50.Failure(
+            "Missing color styling for class '.edited'",
+            help="Add 'color: green;' inside '.edited { ... }'"
+        )
+    # Validate color value is green (allow standard names and hex/rgb)
+    is_green = "green" in color_val or color_val in ["#008000", "#080", "rgb(0,128,0)", "rgb(0, 128, 0)"]
+    if not is_green:
+         raise check50.Failure(
+            f"Incorrect color styling for class '.edited'. Got: {color_val}",
+            help="Make sure color is set to 'green'"
+        )
+        
+    # Check font-weight
+    weight_val = edited_props.get("font-weight")
+    if not weight_val:
+         raise check50.Failure(
+            "Missing font-weight styling for class '.edited'",
+            help="Add 'font-weight: bold;' inside '.edited { ... }'"
+        )
+    if weight_val not in ["bold", "700"]:
+         raise check50.Failure(
+            f"Incorrect font-weight styling for class '.edited'. Got: {weight_val}",
+            help="Make sure font-weight is set to 'bold'"
         )
