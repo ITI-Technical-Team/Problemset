@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
 	"""equation.cpp compiles successfully"""
-	check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG equation.cpp -o equation").exit(0)
+	check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG equation.cpp -o equation 2>&1").exit(0)
 
 @check50.check(test_compile)
 def test1():

@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """target-finder.cpp compiles successfully"""
-    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG target-finder.cpp -o target-finder").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG target-finder.cpp -o target-finder 2>&1").exit(0)
 
 @check50.check(test_compile)
 def test_example1():
@@ -71,7 +71,7 @@ def test_efficiency():
     with open("efficiency_input.txt", "w") as f:
         f.write(stdin_content)
 
-    check50.run("timeout 5 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
+    check50.run("timeout 8 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_random():

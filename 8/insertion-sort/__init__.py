@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """insertion-sort.cpp compiles successfully"""
-    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG insertion-sort.cpp -o insertion-sort").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG insertion-sort.cpp -o insertion-sort 2>&1").exit(0)
 
 @check50.check(test_compile)
 def test_example():

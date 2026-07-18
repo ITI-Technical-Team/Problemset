@@ -32,7 +32,7 @@ def exists():
 @check50.check(exists)
 def test_compile():
     """numbers-1-to-n.cpp compiles successfully"""
-    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG numbers-1-to-n.cpp -o numbers-1-to-n").exit(0)
+    check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG numbers-1-to-n.cpp -o numbers-1-to-n 2>&1").exit(0)
 
 @check50.check(test_compile)
 def test_five():
