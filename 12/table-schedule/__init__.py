@@ -234,6 +234,14 @@ def has_at_least_3_images():
                     help="Make sure your src attribute points to a valid image file (ending with .png, .jpg, .jpeg, etc.)"
                 )
 
+    # All image src values must be distinct — same image repeated does not count
+    srcs = [img.get("src", "").strip() for img in imgs]
+    if len(set(srcs)) < 3:
+        raise check50.Failure(
+            "All 3 images use the same src URL. Each row must show a different food image.",
+            help="Use a different src for each <img> — copy-pasting the same image URL is not accepted"
+        )
+
 
 @check50.check(has_table)
 def images_have_alt():

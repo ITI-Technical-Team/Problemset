@@ -207,14 +207,23 @@ def has_2_radio_buttons():
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     radios = form.find_all("input", type=lambda t: t and t.lower() == "radio")
     if len(radios) < 2:
         raise check50.Failure(
             f"Found {len(radios)} radio button(s), expected at least 2 (Male, Female)",
             help="Add <input type='radio' name='gender' value='male'> Male and <input type='radio' name='gender' value='female'> Female"
         )
-        
+
+    # All radio buttons must share the same name — different names break grouping
+    names = set(r.get("name", "").strip().lower() for r in radios)
+    names.discard("")
+    if len(names) > 1:
+        raise check50.Failure(
+            f"Radio buttons have different name attributes ({', '.join(sorted(names))}). They must all share the same name to form a group.",
+            help="Set the same name (e.g. name='gender') on ALL gender radio buttons"
+        )
+
     # Check page text for Male and Female
     text_content = soup.get_text().lower()
     if "male" not in text_content or "female" not in text_content:
@@ -282,23 +291,28 @@ def has_select_with_options():
 
 @check50.check(exists)
 def has_submit_button():
-    """form has a submit button"""
+    """form has <input type="submit" value="SUBMIT">"""
     _check_tag_closed("register.html", "button")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
-    # Check for <input type="submit"> or <button type="submit"> or <button> inside form
-    has_sub = form.find("input", type=lambda t: t and t.lower() == "submit") or \
-              form.find("button", type=lambda t: t and t.lower() == "submit") or \
-              form.find("button")
-              
-    if not has_sub:
+
+    # Must be <input type="submit"> — a plain <button> is not accepted
+    submit_input = form.find("input", type=lambda t: t and t.lower() == "submit")
+    if not submit_input:
         raise check50.Failure(
-            "Missing submit button",
-            help="Add <input type='submit' value='SUBMIT'> or <button type='submit'>Submit</button>"
+            "Missing <input type=\"submit\"> button",
+            help="Use <input type='submit' value='SUBMIT'> — a plain <button> element is not accepted here"
+        )
+
+    # Value must be "SUBMIT" (case-insensitive)
+    value = (submit_input.get("value") or "").strip()
+    if value.upper() != "SUBMIT":
+        raise check50.Failure(
+            f"Submit button value is '{value}', expected 'SUBMIT'",
+            help="Set value=\"SUBMIT\" on your <input type='submit'> element"
         )
 
 
