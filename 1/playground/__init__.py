@@ -17,7 +17,7 @@ def valid_sb3():
     try:
         scratch_helper.get_project()
     except Exception as e:
-        raise check50.Failure("Could not read project.sb3. Make sure it is a valid Scratch file.")
+        raise check50.Failure("Could not read the .sb3 file. Make sure it is a valid Scratch project.")
 
 @check50.check(valid_sb3)
 def has_sprites():
