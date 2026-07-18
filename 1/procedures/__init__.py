@@ -20,19 +20,19 @@ def valid_sb3():
         raise check50.Failure("Could not read project.sb3. Make sure it is a valid Scratch file.")
 
 @check50.check(valid_sb3)
-def has_sprites():
-    """project contains at least one sprite"""
-    project = scratch_helper.get_project()
-    if scratch_helper.count_sprites(project) < 1:
-        raise check50.Failure("Did not find any sprites in the project.")
-
-@check50.check(valid_sb3)
 def has_custom_block():
     """project defines a custom block (function)"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
     if not scratch_helper.check_custom_block(blocks):
         raise check50.Failure("Did not find any custom blocks (functions).")
+
+@check50.check(has_custom_block)
+def has_sprites():
+    """project contains at least one sprite"""
+    project = scratch_helper.get_project()
+    if scratch_helper.count_sprites(project) < 1:
+        raise check50.Failure("Did not find any sprites in the project.")
 
 @check50.check(valid_sb3)
 def has_loop():

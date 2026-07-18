@@ -34,7 +34,10 @@ def exists():
 @check50.check(exists)
 def has_doctype():
     """index.html has <!DOCTYPE html>"""
-    if not re.search(r'<!doctype\s+html', _read("index.html"), re.IGNORECASE):
+    raw = _read("index.html")
+    # Strip HTML comments so a commented-out DOCTYPE fails
+    uncommented = re.sub(r'<!--.*?-->', '', raw, flags=re.DOTALL)
+    if not re.search(r'<!doctype\s+html', uncommented, re.IGNORECASE):
         raise check50.Failure(
             "Missing <!DOCTYPE html> declaration in index.html",
             help="The first line of every HTML5 file must be <!DOCTYPE html>"
@@ -292,7 +295,10 @@ def has_footer_with_copyright():
 @check50.check(exists)
 def contact_has_doctype():
     """contact.html has <!DOCTYPE html>"""
-    if not re.search(r'<!doctype\s+html', _read("contact.html"), re.IGNORECASE):
+    raw = _read("contact.html")
+    # Strip HTML comments so a commented-out DOCTYPE fails
+    uncommented = re.sub(r'<!--.*?-->', '', raw, flags=re.DOTALL)
+    if not re.search(r'<!doctype\s+html', uncommented, re.IGNORECASE):
         raise check50.Failure(
             "Missing <!DOCTYPE html> in contact.html",
             help="Add <!DOCTYPE html> as the first line of contact.html"

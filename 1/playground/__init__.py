@@ -20,19 +20,19 @@ def valid_sb3():
         raise check50.Failure("Could not read the .sb3 file. Make sure it is a valid Scratch project.")
 
 @check50.check(valid_sb3)
-def has_sprites():
-    """project contains at least one sprite"""
-    project = scratch_helper.get_project()
-    if scratch_helper.count_sprites(project) < 1:
-        raise check50.Failure("Did not find any sprites in the project.")
-
-@check50.check(valid_sb3)
 def has_blocks():
     """project contains code blocks"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
     if len(blocks) < 1:
         raise check50.Failure("Project seems empty (no blocks found).")
+
+@check50.check(has_blocks)
+def has_sprites():
+    """project contains at least one sprite"""
+    project = scratch_helper.get_project()
+    if scratch_helper.count_sprites(project) < 1:
+        raise check50.Failure("Did not find any sprites in the project.")
 
 @check50.check(valid_sb3)
 def has_loop():

@@ -31,7 +31,10 @@ def exists():
 @check50.check(exists)
 def has_doctype():
     """register.html has <!DOCTYPE html>"""
-    if not re.search(r'<!doctype\s+html', _read("register.html"), re.IGNORECASE):
+    raw = _read("register.html")
+    # Strip HTML comments so a commented-out DOCTYPE fails
+    uncommented = re.sub(r'<!--.*?-->', '', raw, flags=re.DOTALL)
+    if not re.search(r'<!doctype\s+html', uncommented, re.IGNORECASE):
         raise check50.Failure(
             "Missing <!DOCTYPE html> declaration",
             help="The first line of register.html must be <!DOCTYPE html>"

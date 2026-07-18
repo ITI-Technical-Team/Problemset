@@ -31,7 +31,10 @@ def exists():
 @check50.check(exists)
 def has_doctype():
     """food.html has <!DOCTYPE html>"""
-    if not re.search(r'<!doctype\s+html', _read("food.html"), re.IGNORECASE):
+    raw = _read("food.html")
+    # Strip HTML comments so a commented-out DOCTYPE (e.g. <!--<!DOCTYPE html>-->) fails
+    uncommented = re.sub(r'<!--.*?-->', '', raw, flags=re.DOTALL)
+    if not re.search(r'<!doctype\s+html', uncommented, re.IGNORECASE):
         raise check50.Failure(
             "Missing <!DOCTYPE html> declaration",
             help="The first line of your file must be <!DOCTYPE html>"
