@@ -103,6 +103,7 @@ let _quoteText = "";
 let _bodyBg = "";
 let _messageColor = "";
 let alerted = null;
+let _messageUsedInnerHTML = false;
 
 let eventListeners = {};
 
@@ -131,7 +132,7 @@ class MockElement {
     set textContent(v) {
         if (this.id === "preview") _previewText = v;
         if (this.id === "quote") _quoteText = v;
-        if (this.id === "message") _messageHtml = v;
+        if (this.id === "message") { _messageHtml = v; _messageUsedInnerHTML = false; }
     }
     
     get innerHTML() {
@@ -139,7 +140,7 @@ class MockElement {
         return this.textContent;
     }
     set innerHTML(v) {
-        if (this.id === "message") _messageHtml = v;
+        if (this.id === "message") { _messageHtml = v; _messageUsedInnerHTML = true; }
         else this.textContent = v;
     }
     
@@ -240,6 +241,11 @@ eventListeners["showBtn_click"]();
 
 if (!_messageHtml.toLowerCase().includes("hello") || !_messageHtml.toLowerCase().includes("mazen") || !_messageHtml.toLowerCase().includes("happy")) {
     console.log("FAIL_HAPPY_GREETING:" + _messageHtml);
+    process.exit(1);
+}
+// Check that innerHTML was used (not textContent) for bold rendering
+if (!_messageUsedInnerHTML) {
+    console.log("FAIL_TEXTCONTENT_USED:" + _messageHtml);
     process.exit(1);
 }
 // Check for bold formatting on name and mood
@@ -348,6 +354,12 @@ console.log("PASS");
             raise check50.Failure(
                 "Greeting message format is incorrect for Happy mood",
                 help=f"Expected greeting like 'Hello Mazen! You seem Happy today'. Got: {got!r}"
+            )
+        elif out.startswith("FAIL_TEXTCONTENT_USED"):
+            got = out.split(":", 1)[1]
+            raise check50.Failure(
+                "Used textContent instead of innerHTML for the greeting message",
+                help=f"Use message.innerHTML to set HTML content with bold tags (e.g. <strong>). Using textContent renders HTML tags as literal text. Got: {got!r}"
             )
         elif out.startswith("FAIL_HAPPY_BOLD"):
             got = out.split(":", 1)[1]
