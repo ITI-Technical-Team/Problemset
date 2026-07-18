@@ -24,6 +24,66 @@ def exists():
 
 
 @check50.check(exists)
+def has_title():
+    """index.html has a <title> containing 'Quote of the Day'"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    title = soup.find("title")
+    if not title:
+        raise check50.Failure(
+            "Missing <title> element inside <head>",
+            help="Add a `<title>Quote of the Day</title>` inside the `<head>` section of index.html"
+        )
+    if "quote of the day" not in title.get_text().lower():
+        raise check50.Failure(
+            "Page title text is incorrect",
+            help="Make sure the title contains 'Quote of the Day'"
+        )
+
+
+@check50.check(exists)
+def has_heading_h1():
+    """index.html has a <h1> heading containing 'Quote of the Day'"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    h1 = soup.find("h1")
+    if not h1:
+        raise check50.Failure(
+            "Missing <h1> element in index.html",
+            help="Add a `<h1>Quote of the Day</h1>` inside your `<body>` tag"
+        )
+    if "quote of the day" not in h1.get_text().lower():
+        raise check50.Failure(
+            "Heading text is incorrect",
+            help="Make sure the <h1> heading contains 'Quote of the Day'"
+        )
+
+
+@check50.check(exists)
+def has_style_block():
+    """index.html has a <style> block inside <head> with styles"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    head = soup.find("head")
+    style = None
+    if head:
+        style = head.find("style")
+    else:
+        style = soup.find("style")
+        
+    if not style:
+        raise check50.Failure(
+            "Missing <style> element in the head section",
+            help="Add a `<style>...</style>` block inside the `<head>` tag to style your page"
+        )
+    if not style.string or not style.string.strip():
+        raise check50.Failure(
+            "CSS <style> block is empty",
+            help="Define some style rules inside the `<style>` block"
+        )
+
+
+@check50.check(exists)
 def has_quote_elements():
     """index.html has elements with id='quote' and id='author'"""
     html = _read("index.html")
@@ -126,6 +186,10 @@ if (typeof quotes !== "object" || quotes === null) {
     console.log("FAIL_QUOTES_TYPE");
     process.exit(1);
 }
+if (Array.isArray(quotes)) {
+    console.log("FAIL_QUOTES_ARRAY");
+    process.exit(1);
+}
 let count = 0;
 for (let i = 0; i < 10; i++) {
     if (quotes[i] || quotes[String(i)]) count++;
@@ -201,6 +265,11 @@ console.log("PASS");
             raise check50.Failure(
                 "Missing 'quotes' variable",
                 help="Declare a quotes object containing 10 different quotes: let quotes = { 0: { quote: '...', author: '...' }, ... };"
+            )
+        elif out.startswith("FAIL_QUOTES_ARRAY"):
+            raise check50.Failure(
+                "Variable 'quotes' should be an object, not an array",
+                help="Declare quotes as an object using curly braces, e.g. let quotes = { 0: { ... } };"
             )
         elif out.startswith("FAIL_QUOTES_TYPE"):
             raise check50.Failure(
