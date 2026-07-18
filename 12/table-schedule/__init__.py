@@ -8,6 +8,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 # ─── existence & basic structure ─────────────────────────────────────────────
 
 @check50.check()
@@ -24,11 +36,16 @@ def has_doctype():
             "Missing <!DOCTYPE html> declaration",
             help="The first line of your file must be <!DOCTYPE html>"
         )
+    _check_tag_closed("food.html", "html")
+    _check_tag_closed("food.html", "head")
+    _check_tag_closed("food.html", "body")
 
 
 @check50.check(exists)
 def has_head_body():
     """food.html has <head> and <body>"""
+    _check_tag_closed("food.html", "head")
+    _check_tag_closed("food.html", "body")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.head:
@@ -40,6 +57,7 @@ def has_head_body():
 @check50.check(exists)
 def has_title_egyptian_food():
     """<title> reads 'Egyptian Food'"""
+    _check_tag_closed("food.html", "title")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.title or "egyptian food" not in soup.title.get_text().lower():
@@ -54,6 +72,8 @@ def has_title_egyptian_food():
 @check50.check(exists)
 def has_header_element():
     """page has a <header> element"""
+    _check_tag_closed("food.html", "header")
+    _check_tag_closed("food.html", "p")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("header"):
@@ -103,6 +123,7 @@ def header_contains_subtitle_paragraph():
 @check50.check(exists)
 def has_table():
     """page has a <table> element"""
+    _check_tag_closed("food.html", "table")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("table"):
@@ -115,6 +136,7 @@ def has_table():
 @check50.check(has_table)
 def has_at_least_3_rows():
     """table has at least 3 <tr> rows"""
+    _check_tag_closed("food.html", "tr")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
@@ -129,6 +151,7 @@ def has_at_least_3_rows():
 @check50.check(has_table)
 def each_row_has_2_cells():
     """each table row has exactly 2 <td> cells (text + image)"""
+    _check_tag_closed("food.html", "td")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
@@ -145,6 +168,7 @@ def each_row_has_2_cells():
 @check50.check(has_table)
 def has_paragraphs_in_cells():
     """table cells contain <p> text paragraphs"""
+    _check_tag_closed("food.html", "p")
     html = _read("food.html")
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")

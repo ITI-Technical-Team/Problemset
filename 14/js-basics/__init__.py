@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _strip_js_comments(code):
     """Strip single-line and multi-line JS comments."""
     code = re.sub(r'//[^\n]*', '', code)
@@ -31,9 +43,34 @@ def exists():
 
 @check50.check(exists)
 def has_script():
-    """index.html contains a <script> block"""
+    """index.html contains title, heading, result element, and a <script> block"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "h1")
+    _check_tag_closed("index.html", "p")
+    _check_tag_closed("index.html", "script")
+    
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
+    
+    # Title verification
+    title = soup.find("title")
+    if not title or title.get_text().strip().lower() != "age category checker":
+        raise check50.Failure(
+            "Expected page title to be 'Age Category Checker'",
+            help="Set your <title> tag text to exactly: 'Age Category Checker'"
+        )
+        
+    # Heading verification
+    h1 = soup.find("h1")
+    if not h1 or h1.get_text().strip().lower() != "check your age category":
+        raise check50.Failure(
+            "Expected heading to be 'Check Your Age Category'",
+            help="Add a heading tag: <h1>Check Your Age Category</h1>"
+        )
+
     if not soup.find("script"):
         raise check50.Failure(
             "Missing <script> tag",
@@ -57,11 +94,19 @@ def has_result_element():
 
 @check50.check(has_script)
 def prompts_user():
-    """JavaScript prompts the user for their age and converts it with Number()"""
+    """JavaScript prompts the user for their age, defines arrow function, and converts it with Number()"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_raw = soup.find("script").string or ""
     js_clean = _strip_js_comments(js_raw)
+
+    # Check for arrow function checkAge
+    # Matches: const checkAge = (...) => or let checkAge = (...) => or checkAge = (...) => or (age) =>
+    if not re.search(r'checkAge\s*=\s*(?:\([^)]*\)|[a-zA-Z_$][\w$]*)\s*=>', js_clean):
+        raise check50.Failure(
+            "Function checkAge is not defined as an arrow function",
+            help="Define checkAge as an arrow function: const checkAge = (age) => { ... }"
+        )
 
     if "prompt(" not in js_clean:
         raise check50.Failure(
@@ -192,7 +237,7 @@ console.log("PASS");
 
 @check50.check(exists)
 def has_css_classes():
-    """CSS defines .child, .teenager, and .adult classes with text-align center"""
+    """CSS defines .child, .teenager, and .adult classes, centers page, and sets light background"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     style_tag = soup.find("style")
@@ -215,4 +260,10 @@ def has_css_classes():
         raise check50.Failure(
             "Page content is not centered",
             help="Add 'text-align: center;' to your CSS to center the page content"
+        )
+
+    if "background" not in css_clean and "background-color" not in css_clean:
+        raise check50.Failure(
+            "Missing background color style rule",
+            help="Add background-color (e.g. #f0f8ff) to your CSS styles"
         )

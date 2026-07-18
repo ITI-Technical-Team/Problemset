@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _strip_js_comments(code):
     code = re.sub(r'//[^\n]*', '', code)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
@@ -38,8 +50,33 @@ def exists():
 
 @check50.check(exists)
 def has_script():
-    """index.html contains a <script> block"""
-    soup = BeautifulSoup(_read("index.html"), "html.parser")
+    """index.html contains title, heading, and a <script> block"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "h1")
+    _check_tag_closed("index.html", "script")
+    
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # Title verification
+    title = soup.find("title")
+    if not title or title.get_text().strip().lower() != "student grade calculator":
+        raise check50.Failure(
+            "Expected page title to be 'Student Grade Calculator'",
+            help="Set your <title> tag text to exactly: 'Student Grade Calculator'"
+        )
+        
+    # Heading verification
+    h1 = soup.find("h1")
+    if not h1 or h1.get_text().strip().lower() != "student grade calculator":
+        raise check50.Failure(
+            "Expected heading to be 'Student Grade Calculator'",
+            help="Add a heading tag: <h1>Student Grade Calculator</h1>"
+        )
+
     if not soup.find("script"):
         raise check50.Failure(
             "Missing <script> tag",
@@ -143,6 +180,40 @@ console.log("PASS2");
     if rc != 0 or out != "PASS2":
         _raise_dom_failure(out or err, test_case="boundary pass student (Bob, 50, 50, 50) — average exactly 50 must be 'Pass'")
 
+    # ── Test Case 3: failing student ──────────────────────────────────────────
+    # Name="Charlie", grades=40,45,35 → total=120, average=40.00, result="Fail"
+    mock_failing_charles = r"""
+let _prompts = ["Charlie", "40", "45", "35"];
+let _pi = 0;
+let _alerted = null;
+global.prompt = () => _prompts[_pi++] || "0";
+global.alert  = (msg) => { _alerted = String(msg); };
+global.document = { getElementById: () => ({ innerText: "", textContent: "" }) };
+"""
+    harness_failing_charles = r"""
+if (_alerted === null) {
+    console.log("FAIL_NO_ALERT");
+    process.exit(1);
+}
+const out3 = _alerted.toLowerCase();
+if (!out3.includes("120")) {
+    console.log("FAIL_TOTAL:" + _alerted);
+    process.exit(1);
+}
+if (!out3.includes("40.00")) {
+    console.log("FAIL_AVERAGE:" + _alerted);
+    process.exit(1);
+}
+if (!out3.includes("fail")) {
+    console.log("FAIL_RESULT_FAIL:" + _alerted);
+    process.exit(1);
+}
+console.log("PASS3");
+"""
+    rc, out, err = _run_node(mock_failing_charles + js_code + harness_failing_charles)
+    if rc != 0 or out != "PASS3":
+        _raise_dom_failure(out or err, test_case="failing student (Charlie, 40, 45, 35) — average < 50 must be 'Fail'")
+
 
 def _raise_dom_failure(out, test_case):
     if out.startswith("FAIL_NO_ALERT"):
@@ -188,7 +259,7 @@ def _raise_dom_failure(out, test_case):
 
 @check50.check(exists)
 def checks_css_styling():
-    """CSS centers content and applies a color to the h1 heading"""
+    """CSS centers content, sets custom font-family, background, and heading color"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     style_tag = soup.find("style")
@@ -214,4 +285,14 @@ def checks_css_styling():
         raise check50.Failure(
             "Page heading is missing a custom color",
             help="Add color: darkred; (or any color) to your h1 or body CSS rule"
+        )
+    if "font-family" not in css:
+        raise check50.Failure(
+            "Missing font-family CSS property",
+            help="Specify a custom font-family on body or page elements (e.g., font-family: Arial;)"
+        )
+    if "background" not in css and "background-color" not in css:
+        raise check50.Failure(
+            "Missing background-color CSS property",
+            help="Set a custom background color on the page body in your CSS rule"
         )

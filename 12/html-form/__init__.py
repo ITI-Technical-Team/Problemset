@@ -8,6 +8,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 # ─── existence & structure ────────────────────────────────────────────────────
 
 @check50.check()
@@ -24,11 +36,15 @@ def has_doctype():
             "Missing <!DOCTYPE html> declaration",
             help="The first line of register.html must be <!DOCTYPE html>"
         )
+    _check_tag_closed("register.html", "html")
+    _check_tag_closed("register.html", "head")
+    _check_tag_closed("register.html", "body")
 
 
 @check50.check(exists)
 def has_title():
     """<title> reads 'Course Registration'"""
+    _check_tag_closed("register.html", "title")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.title or "course registration" not in soup.title.get_text().lower():
@@ -41,6 +57,7 @@ def has_title():
 @check50.check(exists)
 def has_form():
     """page has a <form> element"""
+    _check_tag_closed("register.html", "form")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("form"):
@@ -55,6 +72,7 @@ def has_form():
 @check50.check(exists)
 def has_fieldset():
     """form has a <fieldset> element (required!)"""
+    _check_tag_closed("register.html", "fieldset")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
@@ -68,6 +86,7 @@ def has_fieldset():
 @check50.check(has_fieldset)
 def has_legend():
     """<fieldset> has a <legend>"""
+    _check_tag_closed("register.html", "legend")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     fieldset = soup.find("fieldset")
@@ -162,6 +181,7 @@ def has_two_password_inputs():
 @check50.check(exists)
 def has_repassword_label():
     """form has a label for Repassword"""
+    _check_tag_closed("register.html", "label")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     labels = soup.find_all("label")
@@ -232,6 +252,8 @@ def has_checkboxes():
 @check50.check(exists)
 def has_select_with_options():
     """form has a <select> drop-down with at least 3 <option> items (university)"""
+    _check_tag_closed("register.html", "select")
+    _check_tag_closed("register.html", "option")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
@@ -258,6 +280,7 @@ def has_select_with_options():
 @check50.check(exists)
 def has_submit_button():
     """form has a submit button"""
+    _check_tag_closed("register.html", "button")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
@@ -279,6 +302,7 @@ def has_submit_button():
 @check50.check(exists)
 def has_reset_button():
     """form has <input type='reset'> or <button type='reset'>"""
+    _check_tag_closed("register.html", "button")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
@@ -300,6 +324,7 @@ def has_reset_button():
 @check50.check(exists)
 def has_labels():
     """form has <label> elements for its inputs"""
+    _check_tag_closed("register.html", "label")
     html = _read("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")

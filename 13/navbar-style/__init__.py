@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _html():
     html = _read("index.html")
     clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
@@ -83,6 +95,10 @@ def exists():
 @check50.check(exists)
 def has_form():
     """index.html has a <form> element"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "form")
     html = _html()
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("form"):
@@ -95,6 +111,8 @@ def has_form():
 @check50.check(has_form)
 def has_labels_and_inputs():
     """form contains label, input, and textarea elements for Name, Email, and Message"""
+    _check_tag_closed("index.html", "label")
+    _check_tag_closed("index.html", "textarea")
     html = _html()
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
@@ -134,6 +152,7 @@ def has_labels_and_inputs():
 @check50.check(has_form)
 def has_submit_button():
     """form has a submit button with type="submit" """
+    _check_tag_closed("index.html", "button")
     html = _html()
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")

@@ -10,6 +10,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _get_css():
     """Retrieve all CSS content from index.html style tags and style.css (if it exists)"""
     css_content = ""
@@ -58,7 +70,16 @@ def exists():
 
 @check50.check(exists)
 def has_html_structure():
-    """index.html contains title, heading #title, and 3 paragraphs with class 'info' and correct text"""
+    """index.html contains title, heading #title, 3 paragraphs, button labeled 'Edit Paragraphs', and script"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "h1")
+    _check_tag_closed("index.html", "p")
+    _check_tag_closed("index.html", "button")
+    _check_tag_closed("index.html", "script")
+    
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
@@ -104,6 +125,13 @@ def has_html_structure():
     btn = soup.find("button")
     if not btn:
          raise check50.Failure("Missing <button> element")
+         
+    btn_text = btn.get_text().strip().lower()
+    if "edit paragraphs" not in btn_text:
+        raise check50.Failure(
+            "Button is missing the label 'Edit Paragraphs'",
+            help="Label your button as 'Edit Paragraphs': <button onclick=\"editParagraphs()\">Edit Paragraphs</button>"
+        )
          
     onclick = btn.get("onclick", "")
     if "editparagraphs()" not in onclick.lower().replace(" ", ""):

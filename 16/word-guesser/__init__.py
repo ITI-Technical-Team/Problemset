@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _strip_js_comments(code):
     code = re.sub(r'//[^\n]*', '', code)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
@@ -26,12 +38,29 @@ def exists():
 @check50.check(exists)
 def has_dashboard_inputs():
     """index.html has nameInput, preview element, moodSelect, showBtn, message, and quote elements"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "h1")
+    _check_tag_closed("index.html", "p")
+    _check_tag_closed("index.html", "select")
+    _check_tag_closed("index.html", "option")
+    _check_tag_closed("index.html", "button")
+    _check_tag_closed("index.html", "script")
+    
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
     # nameInput
-    if not soup.find(id="nameInput"):
+    name_input = soup.find(id="nameInput")
+    if not name_input:
         raise check50.Failure("Missing input with id='nameInput'")
+    if not name_input.get("placeholder"):
+        raise check50.Failure(
+            "Missing placeholder attribute on nameInput",
+            help="Add a placeholder to nameInput: <input type=\"text\" id=\"nameInput\" placeholder=\"Enter your name\">"
+        )
         
     # preview
     if not soup.find(id="preview"):
@@ -49,8 +78,15 @@ def has_dashboard_inputs():
             raise check50.Failure(f"Missing mood select option '{opt.capitalize()}'")
             
     # showBtn
-    if not soup.find(id="showBtn"):
+    show_btn = soup.find(id="showBtn")
+    if not show_btn:
          raise check50.Failure("Missing button with id='showBtn'")
+    btn_text = show_btn.get_text().strip().lower()
+    if not any(x in btn_text for x in ["show", "message"]):
+        raise check50.Failure(
+            "Show button is missing the label 'Show Message'",
+            help="Label your button as 'Show Message': <button id=\"showBtn\">Show Message</button>"
+        )
          
     # page title
     title_tag = soup.find("title")

@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _html():
     html = _read("index.html")
     clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
@@ -80,6 +92,10 @@ def exists():
 @check50.check(exists)
 def has_navbar():
     """index.html has a <nav> element with class 'navbar'"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "nav")
     html = _html()
     soup = BeautifulSoup(html, "html.parser")
     nav = soup.find("nav")
@@ -100,6 +116,7 @@ def has_navbar():
 @check50.check(has_navbar)
 def has_three_links():
     """the navigation bar has at least 3 anchor links (Home, About, Contact)"""
+    _check_tag_closed("index.html", "a")
     html = _html()
     soup = BeautifulSoup(html, "html.parser")
     nav = soup.find("nav")

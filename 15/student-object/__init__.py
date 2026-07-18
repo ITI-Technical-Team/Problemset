@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _strip_js_comments(code):
     code = re.sub(r'//[^\n]*', '', code)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
@@ -26,6 +38,13 @@ def exists():
 @check50.check(exists)
 def has_title():
     """index.html has page title 'Company Info - Objects Task'"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "h1")
+    _check_tag_closed("index.html", "button")
+    _check_tag_closed("index.html", "script")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     title = soup.find("title")
@@ -57,12 +76,19 @@ def has_heading():
 
 @check50.check(exists)
 def has_button():
-    """index.html has a button that triggers showInfo()"""
+    """index.html has a button that triggers showInfo() and is labeled 'Show Info'"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     btn = soup.find("button")
     if not btn:
         raise check50.Failure("Missing <button> element")
+        
+    btn_text = btn.get_text().strip().lower()
+    if "show info" not in btn_text:
+        raise check50.Failure(
+            "Button is missing the label 'Show Info'",
+            help="Label your button as 'Show Info': <button onclick=\"showInfo()\">Show Info</button>"
+        )
         
     onclick = btn.get("onclick", "")
     if "showinfo()" not in onclick.lower().replace(" ", ""):

@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _strip_js_comments(code):
     code = re.sub(r'//[^\n]*', '', code)
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
@@ -29,8 +41,26 @@ def exists():
 
 @check50.check(exists)
 def has_info_element():
-    """index.html has an element with id='info'"""
-    soup = BeautifulSoup(_read("index.html"), "html.parser")
+    """index.html contains title, heading, and element with id='info'"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "title")
+    _check_tag_closed("index.html", "p")
+    _check_tag_closed("index.html", "button")
+    _check_tag_closed("index.html", "script")
+    
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # Title verification
+    title = soup.find("title")
+    if not title or title.get_text().strip().lower() != "greet user":
+        raise check50.Failure(
+            "Expected page title to be 'Greet User'",
+            help="Set your <title> tag text to exactly: 'Greet User'"
+        )
+
     if not soup.find(id="info"):
         raise check50.Failure(
             "Missing element with id='info'",
@@ -40,11 +70,20 @@ def has_info_element():
 
 @check50.check(exists)
 def has_button_trigger():
-    """index.html contains a button that calls showInfo()"""
+    """index.html contains a button that calls showInfo() and is labeled 'Click Me'"""
     html = _read("index.html").lower()
     soup = BeautifulSoup(html, "html.parser")
-    if not soup.find("button"):
+    btn = soup.find("button")
+    if not btn:
         raise check50.Failure("Missing <button> element")
+        
+    btn_text = btn.get_text().strip().lower()
+    if "click me" not in btn_text:
+        raise check50.Failure(
+            "Button text should be 'Click Me'",
+            help="Label your button as 'Click Me': <button onclick=\"showInfo()\">Click Me</button>"
+        )
+        
     if "showinfo()" not in html:
         raise check50.Failure(
             "Button does not trigger showInfo() on click",
@@ -203,6 +242,11 @@ def checks_css_styling():
         raise check50.Failure(
             "Button is missing a background-color property in CSS",
             help="Add background-color to your button"
+        )
+    if "color" not in css:
+        raise check50.Failure(
+            "Button is missing a color property in CSS",
+            help="Set the text color of the button (e.g., color: white;)"
         )
     if "border-radius" not in css:
         raise check50.Failure(

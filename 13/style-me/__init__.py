@@ -9,6 +9,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 def _html():
     html = _read("index.html")
     clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
@@ -57,6 +69,10 @@ def exists():
 @check50.check(exists)
 def has_card_div():
     """index.html contains a <div> with a class"""
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
+    _check_tag_closed("index.html", "div")
     html = _html()
     match = re.search(r'<div[^+]+class=["\']?([a-zA-Z0-9\-_]+)["\']?[^>]*>', html)
     # Fallback search for class attribute in a div
@@ -73,6 +89,8 @@ def has_card_div():
 @check50.check(has_card_div)
 def has_h2_and_p(card_class):
     """the card contains an <h2> title and a <p> paragraph"""
+    _check_tag_closed("index.html", "h2")
+    _check_tag_closed("index.html", "p")
     html = _html()
     # Check for h2
     if "<h2" not in html or "</h2>" not in html:
@@ -86,7 +104,7 @@ def has_h2_and_p(card_class):
 
 @check50.check(has_card_div)
 def checks_css_properties(card_class):
-    """CSS sets border, border-radius, padding, and max-width on the card"""
+    """CSS sets border, border-radius, padding, max-width, and centering on the card"""
     css = _get_css()
     
     # Strip comments first
@@ -151,4 +169,17 @@ def checks_css_properties(card_class):
         raise check50.Failure(
             f"Class '.{card_class}' is missing a width or max-width property",
             help="Add 'max-width: 400px;' to limit the card's width"
+        )
+
+    # 5. Centering (margin containing auto)
+    has_margin_auto = False
+    for p, v in properties.items():
+        if p == "margin" or p.startswith("margin-"):
+            if "auto" in v:
+                has_margin_auto = True
+                break
+    if not has_margin_auto:
+        raise check50.Failure(
+            f"Class '.{card_class}' is not centered using margin auto",
+            help="Add 'margin: 50px auto;' or 'margin: auto;' to center the card on the page"
         )
