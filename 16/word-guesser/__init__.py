@@ -52,6 +52,22 @@ def has_dashboard_inputs():
     if not soup.find(id="showBtn"):
          raise check50.Failure("Missing button with id='showBtn'")
          
+    # page title
+    title_tag = soup.find("title")
+    if not title_tag or "user dashboard" not in title_tag.get_text().strip().lower():
+        raise check50.Failure(
+            "Missing or incorrect page title",
+            help="Add <title>User Dashboard</title> inside the <head> element"
+        )
+
+    # h1 heading
+    h1 = soup.find("h1")
+    if not h1 or "user mood dashboard" not in h1.get_text().strip().lower():
+        raise check50.Failure(
+            "Missing or incorrect <h1> heading",
+            help="Add <h1>User Mood Dashboard</h1> to your page"
+        )
+
     # message & quote
     if not soup.find(id="message"):
          raise check50.Failure("Missing element with id='message'")
@@ -272,6 +288,11 @@ if (!_quoteText || _quoteText === '""') {
     console.log("FAIL_HAPPY_QUOTE:" + _quoteText);
     process.exit(1);
 }
+// Verify the quote is wrapped in double-quote characters: "..."
+if (!_quoteText.startsWith('"') || !_quoteText.endsWith('"')) {
+    console.log("FAIL_QUOTE_FORMAT:" + _quoteText);
+    process.exit(1);
+}
 if (_bodyBg !== "#d4edda") {
     console.log("FAIL_HAPPY_BG:" + _bodyBg);
     process.exit(1);
@@ -396,6 +417,12 @@ console.log("PASS");
             raise check50.Failure(
                 "Mood quote was not displayed inside quotes",
                 help="Pick a random quote from the selected mood and set quote.textContent = '\"' + selectedQuote + '\"'"
+            )
+        elif out.startswith("FAIL_QUOTE_FORMAT"):
+            got = out.split(":", 1)[1]
+            raise check50.Failure(
+                "Quote is not wrapped in double-quote characters",
+                help=f'Display the quote wrapped in quotes like: quote.textContent = \'"\' + selectedQuote + \'"\'. Got: {got!r}'
             )
         elif out.startswith("FAIL_HAPPY_BG") or out.startswith("FAIL_SAD_BG") or out.startswith("FAIL_EXCITED_BG"):
             got = out.split(":", 1)[1]
