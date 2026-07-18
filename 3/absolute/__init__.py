@@ -30,6 +30,14 @@ def exists():
 	check50.exists("absolute.cpp")
 
 @check50.check(exists)
+def test_no_abs():
+	"""solution does not use the abs() function"""
+	with open("absolute.cpp") as f:
+		source = f.read()
+	if "abs(" in source:
+		raise check50.Failure("Do not use abs() — compute the absolute value manually")
+
+@check50.check(test_no_abs)
 def test_compile():
 	"""absolute.cpp compiles successfully"""
 	check50.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG absolute.cpp -o absolute").exit(0)
@@ -68,8 +76,8 @@ def test_random():
 	check50.run("./absolute").stdin(f"{a} {b}", prompt=False).stdout(expected, regex=False).exit(0)
 
 @check50.check(test_compile)
-def test_random():
-	"""handles random inputs correctly"""
+def test_random2():
+	"""handles a second set of random inputs correctly"""
 	a = random.randint(-1000000, 1000000)
 	b = random.randint(-1000000, 1000000)
 	expected = str(abs(a - b))

@@ -57,11 +57,11 @@ def test_efficiency():
     # A naive solution that ignores the sorted property and scans the array linearly
     # takes O(N * Q) and will TLE.
     #
-    # N=20000 elements (sorted 1..N), Q=2000 queries (all impossible -> forces full scan on naive).
+    # N=50000 elements (sorted 1..N), Q=5000 queries (all impossible -> forces full scan on naive).
     # Benchmarked WITHOUT fast I/O:
-    #   O(Q log N) binary search solution: < 0.05s -> well within the 2s timeout
-    #   O(N * Q) brute-force linear search:  > 3.00s -> exceeds the 2s timeout
-    N, Q = 20000, 2000
+    #   O(Q log N) binary search solution: < 0.1s  -> well within the 5s timeout
+    #   O(N * Q) brute-force linear search:  > 10s  -> far exceeds the 5s timeout
+    N, Q = 50000, 5000
     elements = " ".join(str(i) for i in range(1, N + 1))  # already sorted
     # x=1, z=N+11 => target = z - x = N+10, which is impossible to find, forcing naive to scan all N elements
     queries = "\n".join(f"1 {N + 11}" for _ in range(Q))
@@ -71,7 +71,7 @@ def test_efficiency():
     with open("efficiency_input.txt", "w") as f:
         f.write(stdin_content)
 
-    check50.run("timeout 2 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
+    check50.run("timeout 5 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_random():
