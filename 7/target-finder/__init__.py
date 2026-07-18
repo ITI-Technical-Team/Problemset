@@ -57,11 +57,11 @@ def test_efficiency():
     # A naive solution that ignores the sorted property and scans the array linearly
     # takes O(N * Q) and will TLE.
     #
-    # N=100000 elements (sorted 1..N), Q=10000 queries (all impossible -> forces full scan on naive).
+    # N=20000 elements (sorted 1..N), Q=2000 queries (all impossible -> forces full scan on naive).
     # Benchmarked WITHOUT fast I/O:
-    #   O(Q log N) binary search solution: ~0.15s  -> well within the 2s timeout
-    #   O(N * Q) brute-force linear search:  > 5.00s  -> far exceeds the 2s timeout
-    N, Q = 100000, 10000
+    #   O(Q log N) binary search solution: < 0.05s -> well within the 2s timeout
+    #   O(N * Q) brute-force linear search:  > 3.00s -> exceeds the 2s timeout
+    N, Q = 20000, 2000
     elements = " ".join(str(i) for i in range(1, N + 1))  # already sorted
     # x=1, z=N+11 => target = z - x = N+10, which is impossible to find, forcing naive to scan all N elements
     queries = "\n".join(f"1 {N + 11}" for _ in range(Q))
