@@ -97,10 +97,14 @@ def has_style_block():
             "Missing <style> element in the head section",
             help="Add a `<style>...</style>` block inside the `<head>` tag to style your page"
         )
-    if not style.string or not style.string.strip():
+    css = style.string or ""
+    css_clean = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
+    # Find all braces content
+    rules = re.findall(r'\{([^}]*)\}', css_clean)
+    if not rules or not any(':' in body for body in rules):
         raise check50.Failure(
-            "CSS <style> block is empty",
-            help="Define some style rules inside the `<style>` block"
+            "CSS <style> block is empty or contains no styling properties",
+            help="Define some actual style rules (e.g. body { background-color: lightgray; }) inside the `<style>` block"
         )
 
 
@@ -156,9 +160,18 @@ def verifies_quotes_and_logic():
     script = soup.find("script")
     if not script:
         raise check50.Failure("Missing <script> tag")
-        
+
     js_code = script.string or ""
     js_clean = _strip_js_comments(js_code)
+
+    # ── Pure-Python checks (work even without node installed) ──────────────────
+
+    # 1. Detect array syntax: let/const/var quotes = [
+    if re.search(r'\b(?:let|const|var)\s+quotes\s*=\s*\[', js_clean):
+        raise check50.Failure(
+            "Variable 'quotes' should be an object, not an array",
+            help="Declare quotes using curly braces, e.g. let quotes = { 0: { quote: '...', author: '...' }, 1: { ... }, ... };"
+        )
 
     # Active code checks
     if "randomquotes" not in js_clean.lower():
