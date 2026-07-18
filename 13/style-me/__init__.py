@@ -1,6 +1,7 @@
 import check50
 import re
 import os
+from bs4 import BeautifulSoup
 
 
 def _read(path):
@@ -26,6 +27,20 @@ def _get_css():
     
     # Check style.css if it exists
     if os.path.exists("style.css"):
+        # Verify that index.html contains a link tag to style.css
+        soup = BeautifulSoup(clean_html, "html.parser")
+        links = soup.find_all("link", rel=lambda r: r and r.lower() == "stylesheet")
+        has_correct_link = False
+        for link in links:
+            href = link.get("href", "").strip().lower()
+            if href in ["style.css", "./style.css"]:
+                has_correct_link = True
+                break
+        if not has_correct_link:
+            raise check50.Failure(
+                "style.css is not correctly linked in index.html",
+                help="Make sure to include `<link rel=\"stylesheet\" href=\"style.css\">` inside the <head> of index.html"
+            )
         css_content += "\n" + _read("style.css")
         
     return css_content.lower()

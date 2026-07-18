@@ -9,15 +9,35 @@ def _read(path):
         return f.read()
 
 
+def _html():
+    html = _read("index.html")
+    clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    return clean_html
+
+
 def _get_css():
     """Retrieve all CSS content from index.html style tags and style.css (if it exists)"""
     css_content = ""
-    html = _read("index.html")
+    html = _html()
     style_blocks = re.findall(r'<style[^>]*>(.*?)</style>', html, re.DOTALL | re.IGNORECASE)
     for block in style_blocks:
         css_content += "\n" + block
     
     if os.path.exists("style.css"):
+        # Verify that index.html contains a link tag to style.css
+        soup = BeautifulSoup(html, "html.parser")
+        links = soup.find_all("link", rel=lambda r: r and r.lower() == "stylesheet")
+        has_correct_link = False
+        for link in links:
+            href = link.get("href", "").strip().lower()
+            if href in ["style.css", "./style.css"]:
+                has_correct_link = True
+                break
+        if not has_correct_link:
+            raise check50.Failure(
+                "style.css is not correctly linked in index.html",
+                help="Make sure to include `<link rel=\"stylesheet\" href=\"style.css\">` inside the <head> of index.html"
+            )
         css_content += "\n" + _read("style.css")
         
     return css_content
@@ -63,7 +83,7 @@ def exists():
 @check50.check(exists)
 def has_form():
     """index.html has a <form> element"""
-    html = _read("index.html")
+    html = _html()
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("form"):
         raise check50.Failure(
@@ -75,7 +95,7 @@ def has_form():
 @check50.check(has_form)
 def has_labels_and_inputs():
     """form contains label, input, and textarea elements for Name, Email, and Message"""
-    html = _read("index.html")
+    html = _html()
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
@@ -113,24 +133,27 @@ def has_labels_and_inputs():
 
 @check50.check(has_form)
 def has_submit_button():
-    """form has a submit button"""
-    html = _read("index.html")
+    """form has a submit button with type="submit" """
+    html = _html()
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
         
-    has_btn = form.find("button") or \
+    has_btn = form.find("button", type=lambda t: t and t.lower() == "submit") or \
               form.find("input", type=lambda t: t and t.lower() == "submit")
               
     if not has_btn:
+        if form.find("button") or form.find("input"):
+            raise check50.Failure(
+                "Submit button is missing type=\"submit\" attribute",
+                help="Add type=\"submit\" to your button: `<button type=\"submit\">Send</button>`"
+            )
         raise check50.Failure(
             "Missing submit button",
             help="Add a `<button type=\"submit\">Send</button>` or `<input type=\"submit\">` inside the form"
         )
 
-
-# ─── CSS style checks ─────────────────────────────────────────────────────────
 
 @check50.check(has_form)
 def checks_inputs_css():
@@ -138,30 +161,47 @@ def checks_inputs_css():
     css_text = _get_css()
     rules = _parse_css(css_text)
     
-    # We look for styles targeting input, textarea
-    # Properties should be defined on selectors like 'input', 'textarea', or combined input/textarea rules
-    target_selectors = ["input", "textarea", "input,textarea", "textarea,input"]
-    
-    # Find all properties defined for any selector containing input or textarea
     input_props = {}
+    textarea_props = {}
+    
     for sel, props in rules.items():
-        if "input" in sel or "textarea" in sel:
+        if "input" in sel:
             input_props.update(props)
+        if "textarea" in sel:
+            textarea_props.update(props)
             
+    # Check input fields
     if "width" not in input_props:
         raise check50.Failure(
-            "Missing 'width' property on inputs/textarea inside CSS",
-            help="Set 'width: 100%;' (or similar size) on your form fields to make them fill the form container"
+            "Missing 'width' property on input fields inside CSS",
+            help="Set 'width: 100%;' (or similar size) on your form input fields to make them fill the form container"
         )
     if "padding" not in input_props:
         raise check50.Failure(
-            "Missing 'padding' property on inputs/textarea inside CSS",
-            help="Set padding inside input and textarea fields to make them look clean"
+            "Missing 'padding' property on input fields inside CSS",
+            help="Set padding inside input fields to make them look clean"
         )
     if "margin" not in input_props and "margin-bottom" not in input_props:
         raise check50.Failure(
-            "Missing 'margin' spacing property on inputs/textarea inside CSS",
-            help="Add spacing (e.g. margin-bottom: 15px;) to separate your form fields"
+            "Missing 'margin' spacing property on input fields inside CSS",
+            help="Add spacing (e.g. margin-bottom: 15px;) to separate your form input fields"
+        )
+
+    # Check textarea field
+    if "width" not in textarea_props:
+        raise check50.Failure(
+            "Missing 'width' property on textarea inside CSS",
+            help="Set 'width: 100%;' (or similar size) on your textarea field to make it fill the form container"
+        )
+    if "padding" not in textarea_props:
+        raise check50.Failure(
+            "Missing 'padding' property on textarea inside CSS",
+            help="Set padding inside textarea field to make it look clean"
+        )
+    if "margin" not in textarea_props and "margin-bottom" not in textarea_props:
+        raise check50.Failure(
+            "Missing 'margin' spacing property on textarea inside CSS",
+            help="Add spacing (e.g. margin-bottom: 15px;) to separate your form textarea field"
         )
 
 
@@ -183,17 +223,24 @@ def checks_button_css():
                 button_props.update(props)
                 
     # 1. Background color
-    if not any(k in button_props for k in ["background", "background-color"]):
+    normal_bg = button_props.get("background-color", button_props.get("background", ""))
+    if not normal_bg:
         raise check50.Failure(
             "Submit button is missing a custom background-color",
             help="Style your button using 'background-color: ...;'"
         )
         
-    # 2. Text color
-    if "color" not in button_props:
+    # 2. Text color (must be white/light)
+    color_val = button_props.get("color", "")
+    if not color_val:
          raise check50.Failure(
             "Submit button is missing a text color property",
-            help="Set the text color of the button (e.g., 'color: white;')"
+            help="Set the text color of the button to white (e.g., 'color: white;')"
+        )
+    if not any(x in color_val for x in ["white", "#fff", "#ffffff", "255,255,255"]):
+         raise check50.Failure(
+            "Submit button text color must be white",
+            help="Set the text color of the button to white using `color: white;` or `color: #ffffff;`"
         )
          
     # 3. Padding
@@ -203,16 +250,16 @@ def checks_button_css():
             help="Add padding inside the button to make it larger and easier to click"
         )
         
-    # 4. Hover state
-    # We expect a selector like 'button:hover' or 'input[type=submit]:hover' to exist
-    has_hover = False
-    for sel in rules:
-        if ("button:hover" in sel or "submit:hover" in sel or "button" in sel) and "hover" in sel:
-            has_hover = True
-            break
-            
-    if not has_hover:
+    # 4. Hover state (must have background color and it must change)
+    hover_bg = hover_props.get("background-color", hover_props.get("background", ""))
+    if not hover_bg or not any(k in hover_props for k in ["background", "background-color"]):
         raise check50.Failure(
-            "Missing hover style rule for the button in CSS (e.g., button:hover)",
-            help="Add a hover effect (e.g., button:hover { background-color: ...; })"
+            "Missing hover style rule or background-color for the button in CSS (e.g., button:hover)",
+            help="Add a hover effect (e.g., button:hover { background-color: #01293b; })"
+        )
+        
+    if normal_bg == hover_bg:
+        raise check50.Failure(
+            "Submit button hover background color must be different from normal state",
+            help="Change the background-color on button hover to a different color (e.g. darker background)"
         )

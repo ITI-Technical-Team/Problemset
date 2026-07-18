@@ -8,6 +8,18 @@ def _read(path):
         return f.read()
 
 
+def _check_tag_closed(filename, tag):
+    raw_html = _read(filename)
+    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
+    close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
+    if open_count > close_count:
+        raise check50.Failure(
+            f"Unclosed <{tag}> tag in {filename}",
+            help=f"Make sure you close every <{tag}> tag with a matching </{tag}> tag"
+        )
+
+
 # ══════════════════════════════════════════════════════════
 #  index.html checks
 # ══════════════════════════════════════════════════════════
@@ -27,11 +39,15 @@ def has_doctype():
             "Missing <!DOCTYPE html> declaration in index.html",
             help="The first line of every HTML5 file must be <!DOCTYPE html>"
         )
+    _check_tag_closed("index.html", "html")
+    _check_tag_closed("index.html", "head")
+    _check_tag_closed("index.html", "body")
 
 
 @check50.check(exists)
 def has_title():
     """index.html has a <title> inside <head>"""
+    _check_tag_closed("index.html", "title")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.title or not soup.title.get_text().strip():
@@ -44,6 +60,7 @@ def has_title():
 @check50.check(exists)
 def has_header_tag():
     """index.html has a <header> element welcoming the visitor"""
+    _check_tag_closed("index.html", "header")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("header"):
@@ -56,6 +73,7 @@ def has_header_tag():
 @check50.check(exists)
 def has_two_paragraphs():
     """index.html has at least 2 non-empty <p> elements"""
+    _check_tag_closed("index.html", "p")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     paragraphs = soup.find_all("p")
@@ -70,6 +88,7 @@ def has_two_paragraphs():
 @check50.check(exists)
 def has_strong():
     """index.html has a <strong> element"""
+    _check_tag_closed("index.html", "strong")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("strong"):
@@ -82,6 +101,7 @@ def has_strong():
 @check50.check(exists)
 def has_em():
     """index.html has an <em> element"""
+    _check_tag_closed("index.html", "em")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("em"):
@@ -94,6 +114,8 @@ def has_em():
 @check50.check(exists)
 def has_ul_with_3_items():
     """index.html has a <ul> with at least 3 <li> items (favourite websites)"""
+    _check_tag_closed("index.html", "ul")
+    _check_tag_closed("index.html", "li")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     ul = soup.find("ul")
@@ -109,10 +131,21 @@ def has_ul_with_3_items():
             help="Add at least 3 <li> items inside your <ul> list"
         )
 
+    # Check if the list is misplaced (e.g. preceded by a heading that specifies "skills" instead of "websites")
+    prev_heading = ul.find_previous(["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span"])
+    if prev_heading:
+        text = prev_heading.get_text().lower()
+        if "skill" in text or "develop" in text or "know" in text or "lang" in text or "مهار" in text:
+            raise check50.Failure(
+                "Your list of web development skills must be an ordered list (<ol>), not an unordered list (<ul>)",
+                help="Change your skills list tag from <ul> to <ol> and your websites list tag from <ol> to <ul>"
+            )
+
 
 @check50.check(exists)
 def has_ol_with_3_items():
     """index.html has an <ol> with at least 3 <li> items (skills)"""
+    _check_tag_closed("index.html", "ol")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     ol = soup.find("ol")
@@ -128,10 +161,22 @@ def has_ol_with_3_items():
             help="Add at least 3 <li> items inside your <ol> list"
         )
 
+    # Check if the list is misplaced (e.g. preceded by a heading that specifies "websites" instead of "skills")
+    prev_heading = ol.find_previous(["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span"])
+    if prev_heading:
+        text = prev_heading.get_text().lower()
+        if "website" in text or "site" in text or "link" in text or "favorite" in text or "favourite" in text or "موقع" in text or "مواقع" in text or "رابط" in text or "روابط" in text:
+            raise check50.Failure(
+                "Your list of favourite websites must be an unordered list (<ul>), not an ordered list (<ol>)",
+                help="Change your favourite websites list tag from <ol> to <ul> and your skills list tag from <ul> to <ol>"
+            )
+
 
 @check50.check(exists)
 def has_figure_with_img_and_figcaption():
     """index.html has a <figure> with <img> and <figcaption>"""
+    _check_tag_closed("index.html", "figure")
+    _check_tag_closed("index.html", "figcaption")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     figure = soup.find("figure")
@@ -193,6 +238,7 @@ def has_figure_with_img_and_figcaption():
 @check50.check(exists)
 def has_google_link():
     """index.html has a hyperlink to google.com"""
+    _check_tag_closed("index.html", "a")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     links = soup.find_all("a")
@@ -207,6 +253,7 @@ def has_google_link():
 @check50.check(exists)
 def has_contact_page_link():
     """index.html links to contact.html"""
+    _check_tag_closed("index.html", "a")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     links = soup.find_all("a")
@@ -221,6 +268,7 @@ def has_contact_page_link():
 @check50.check(exists)
 def has_footer_with_copyright():
     """index.html has a <footer> with a copyright notice"""
+    _check_tag_closed("index.html", "footer")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     footer = soup.find("footer")
@@ -249,11 +297,15 @@ def contact_has_doctype():
             "Missing <!DOCTYPE html> in contact.html",
             help="Add <!DOCTYPE html> as the first line of contact.html"
         )
+    _check_tag_closed("contact.html", "html")
+    _check_tag_closed("contact.html", "head")
+    _check_tag_closed("contact.html", "body")
 
 
 @check50.check(exists)
 def contact_has_phone_or_email():
     """contact.html contains a phone number or email address"""
+    _check_tag_closed("contact.html", "p")
     html = _read("contact.html")
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text().lower()
@@ -271,6 +323,7 @@ def contact_has_phone_or_email():
 @check50.check(exists)
 def contact_has_back_link():
     """contact.html has an anchor link back to index.html"""
+    _check_tag_closed("contact.html", "a")
     html = _read("contact.html")
     soup = BeautifulSoup(html, "html.parser")
     links = soup.find_all("a")

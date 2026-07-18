@@ -9,15 +9,35 @@ def _read(path):
         return f.read()
 
 
+def _html():
+    html = _read("index.html")
+    clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    return clean_html
+
+
 def _get_css():
     """Retrieve all CSS content from index.html style tags and style.css (if it exists)"""
     css_content = ""
-    html = _read("index.html")
+    html = _html()
     style_blocks = re.findall(r'<style[^>]*>(.*?)</style>', html, re.DOTALL | re.IGNORECASE)
     for block in style_blocks:
         css_content += "\n" + block
     
     if os.path.exists("style.css"):
+        # Verify that index.html contains a link tag to style.css
+        soup = BeautifulSoup(html, "html.parser")
+        links = soup.find_all("link", rel=lambda r: r and r.lower() == "stylesheet")
+        has_correct_link = False
+        for link in links:
+            href = link.get("href", "").strip().lower()
+            if href in ["style.css", "./style.css"]:
+                has_correct_link = True
+                break
+        if not has_correct_link:
+            raise check50.Failure(
+                "style.css is not correctly linked in index.html",
+                help="Make sure to include `<link rel=\"stylesheet\" href=\"style.css\">` inside the <head> of index.html"
+            )
         css_content += "\n" + _read("style.css")
         
     return css_content
@@ -60,7 +80,7 @@ def exists():
 @check50.check(exists)
 def has_navbar():
     """index.html has a <nav> element with class 'navbar'"""
-    html = _read("index.html")
+    html = _html()
     soup = BeautifulSoup(html, "html.parser")
     nav = soup.find("nav")
     if not nav:
@@ -80,7 +100,7 @@ def has_navbar():
 @check50.check(has_navbar)
 def has_three_links():
     """the navigation bar has at least 3 anchor links (Home, About, Contact)"""
-    html = _read("index.html")
+    html = _html()
     soup = BeautifulSoup(html, "html.parser")
     nav = soup.find("nav")
     if not nav:
@@ -126,10 +146,17 @@ def checks_navbar_css():
         
     container_props = rules[container_sel]
     # Check background or background-color
-    if not any(k in container_props for k in ["background", "background-color"]):
+    bg_val = container_props.get("background-color", container_props.get("background", ""))
+    if not bg_val:
         raise check50.Failure(
             "Navbar container (.navbar) is missing a background or background-color property",
             help="Add a dark background color, e.g., 'background-color: #222;' inside your .navbar rule"
+        )
+    # Check that background color is not light or transparent
+    if any(x in bg_val for x in ["white", "#fff", "#ffffff", "255,255,255", "transparent"]):
+        raise check50.Failure(
+            "Navbar background color must be dark",
+            help="Set the background-color of your .navbar to a dark color (e.g. #222 or black)"
         )
         
     # 2. navbar a styles
@@ -148,10 +175,16 @@ def checks_navbar_css():
     link_props = rules[link_sel]
     
     # 2a. Color: white/light
-    if "color" not in link_props:
+    color_val = link_props.get("color", "")
+    if not color_val:
         raise check50.Failure(
             "Navbar links are missing a color property",
             help="Add 'color: white;' to your navbar links style"
+        )
+    if not any(x in color_val for x in ["white", "#fff", "#ffffff", "255,255,255", "yellow", "cyan", "lightblue"]):
+        raise check50.Failure(
+            "Navbar links color must be white (or a light color)",
+            help="Set the text color of navbar links to white using `color: white;`"
         )
         
     # 2b. text-decoration: none
