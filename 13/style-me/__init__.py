@@ -142,11 +142,75 @@ def checks_css_properties(card_class):
             help="Add 'border: 1px solid lightgray;' (or similar) to your card styles"
         )
         
-    # Check color hints if possible
-    border_val_str = " ".join([properties[p] for p in properties if p == "border" or (p.startswith("border-") and p != "border-radius")])
-    if not any(x in border_val_str for x in ["gray", "grey", "d3d3d3", "light", "ccc", "eee"]):
-        # Pass anyway since they might have customized the color
-        pass
+    # Get active border color
+    def _is_grey(color_str):
+        color_str = color_str.strip().lower()
+        grey_names = {
+            "gray", "grey", "lightgray", "lightgrey", "darkgray", "darkgrey",
+            "dimgray", "dimgrey", "slategray", "slategrey", "gainsboro", "silver",
+            "whitesmoke", "ghostwhite", "lightslategray", "lightslategrey"
+        }
+        if color_str in grey_names:
+            return True
+        hex_match = re.match(r'^#([0-9a-f]{3}|[0-9a-f]{6})$', color_str)
+        if hex_match:
+            val = hex_match.group(1)
+            if len(val) == 3:
+                return val[0] == val[1] == val[2]
+            elif len(val) == 6:
+                return val[0:2] == val[2:4] == val[4:6]
+        rgb_match = re.match(r'^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d\.]+\s*)?\)$', color_str)
+        if rgb_match:
+            r, g, b = rgb_match.groups()
+            return r == g == b
+        hsl_match = re.match(r'^hsla?\(\s*\d+\s*,\s*0%?\s*,\s*[\d%]+\s*(?:,\s*[\d\.]+\s*)?\)$', color_str)
+        if hsl_match:
+            return True
+        return False
+
+    def _extract_color(border_val):
+        border_val = border_val.strip().lower()
+        func_match = re.search(r'(?:rgba?|hsla?)\([^\)]+\)', border_val)
+        if func_match:
+            return func_match.group(0)
+        hex_match = re.search(r'#[0-9a-f]{3,6}\b', border_val)
+        if hex_match:
+            return hex_match.group(0)
+        words = re.findall(r'\b[a-zA-Z]+\b', border_val)
+        styles_and_widths = {
+            "solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset", "none", "hidden",
+            "thin", "medium", "thick", "px", "em", "rem", "pt"
+        }
+        colors = [w for w in words if w not in styles_and_widths]
+        if colors:
+            return colors[0]
+        return ""
+
+    border_color = ""
+    if "border-color" in properties:
+        border_color = properties["border-color"]
+    else:
+        for side in ["top", "right", "bottom", "left"]:
+            if f"border-{side}-color" in properties:
+                border_color = properties[f"border-{side}-color"]
+                break
+        if not border_color:
+            for prop_name in ["border", "border-top", "border-right", "border-bottom", "border-left"]:
+                if prop_name in properties:
+                    border_color = _extract_color(properties[prop_name])
+                    if border_color:
+                        break
+
+    if not border_color:
+        raise check50.Failure(
+            f"Class '.{card_class}' has border property, but border color could not be determined",
+            help="Define your border color clearly, e.g. border: 1px solid lightgray;"
+        )
+    if not _is_grey(border_color):
+        raise check50.Failure(
+            f"Border color '{border_color}' is not a shade of grey",
+            help="Set your border color to a light grey color (e.g. lightgray or #ccc)"
+        )
         
     # 2. Border-radius
     if "border-radius" not in properties:

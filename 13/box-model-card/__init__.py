@@ -169,10 +169,90 @@ def checks_navbar_css():
             "Navbar container (.navbar) is missing a background or background-color property",
             help="Add a dark background color, e.g., 'background-color: #222;' inside your .navbar rule"
         )
-    # Check that background color is not light or transparent
-    if any(x in bg_val for x in ["white", "#fff", "#ffffff", "255,255,255", "transparent"]):
+    # Check that background color is dark
+    def parse_color_to_rgb(color_str):
+        color_str = color_str.strip().lower()
+        hex_match = re.match(r'^#([0-9a-f]{3}|[0-9a-f]{6})$', color_str)
+        if hex_match:
+            val = hex_match.group(1)
+            if len(val) == 3:
+                r = int(val[0] * 2, 16)
+                g = int(val[1] * 2, 16)
+                b = int(val[2] * 2, 16)
+            else:
+                r = int(val[0:2], 16)
+                g = int(val[2:4], 16)
+                b = int(val[4:6], 16)
+            return r, g, b
+            
+        rgb_match = re.match(r'^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d\.]+\s*)?\)$', color_str)
+        if rgb_match:
+            r, g, b = map(int, rgb_match.groups())
+            return r, g, b
+            
+        light_names = {
+            "white", "wheat", "lightgray", "lightgrey", "yellow", "lightyellow", "lemonchiffon", 
+            "lightgoldenrodyellow", "papayawhip", "moccasin", "peachpuff", "lavender", "thistle", 
+            "pink", "lightpink", "lightcyan", "powderblue", "lightblue", "skyblue", "paleturquoise", 
+            "aquamarine", "lightgreen", "palegreen", "lime", "springgreen", "lawngreen", "chartreuse", 
+            "yellowgreen", "beige", "bisque", "blanchedalmond", "cornsilk", "gold", "khaki", 
+            "aliceblue", "azure", "floralwhite", "ghostwhite", "honeydew", "ivory", "lavenderblush", 
+            "mintcream", "mistyrose", "oldlace", "seashell", "snow", "whitesmoke", "gainsboro", 
+            "silver", "tan", "plum", "orchid", "violet", "fuchsia", "magenta", "salmon", 
+            "lightsalmon", "tomato", "coral", "orange", "sand", "transparent"
+        }
+        if color_str in light_names:
+            return 255, 255, 255
+            
+        hsl_match = re.match(r'^hsla?\(\s*\d+\s*,\s*([\d\.]+)%?\s*,\s*([\d\.]+)%?\s*(?:,\s*[\d\.]+\s*)?\)$', color_str)
+        if hsl_match:
+            s, l = map(float, hsl_match.groups())
+            if l < 45:
+                return 0, 0, 0
+            else:
+                return 255, 255, 255
+                
+        dark_names = {
+            "black", "navy", "darkblue", "mediumblue", "blue", "darkgreen", "green", "teal", 
+            "darkcyan", "maroon", "purple", "indigo", "darkmagenta", "darkviolet", "darkorange", 
+            "saddlebrown", "dimgray", "dimgrey", "slategray", "slategrey", "darkslategray", 
+            "darkslategrey", "brown", "olive", "grey", "gray"
+        }
+        if color_str in dark_names:
+            return 0, 0, 0
+            
+        return 255, 255, 255
+
+    def extract_color_from_bg(bg_value):
+        bg_value = bg_value.strip().lower()
+        func_match = re.search(r'(?:rgba?|hsla?)\([^\)]+\)', bg_value)
+        if func_match:
+            return func_match.group(0)
+        hex_match = re.search(r'#[0-9a-f]{3,6}\b', bg_value)
+        if hex_match:
+            return hex_match.group(0)
+        words = re.findall(r'\b[a-zA-Z]+\b', bg_value)
+        non_color_words = {
+            "url", "linear", "gradient", "repeat", "no", "scroll", "cover", "contain", "center", 
+            "left", "right", "top", "bottom", "fixed", "local", "inherit", "initial", "revert", "unset"
+        }
+        colors = [w for w in words if w not in non_color_words]
+        if colors:
+            return colors[0]
+        return ""
+
+    color_token = extract_color_from_bg(bg_val)
+    if not color_token:
         raise check50.Failure(
-            "Navbar background color must be dark",
+            "Could not parse background color from your .navbar styles",
+            help="Specify a background color clearly, e.g. background-color: #222;"
+        )
+        
+    r, g, b = parse_color_to_rgb(color_token)
+    y = 0.299 * r + 0.587 * g + 0.114 * b
+    if y >= 120:
+        raise check50.Failure(
+            f"Navbar background color '{color_token}' is not a dark color",
             help="Set the background-color of your .navbar to a dark color (e.g. #222 or black)"
         )
         
