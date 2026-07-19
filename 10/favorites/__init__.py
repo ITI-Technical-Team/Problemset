@@ -60,6 +60,20 @@ def test_dna():
 
 
 @check50.check(test_python_valid)
+def test_scrabble():
+    """counts votes for 'Scrabble' correctly (2)"""
+    result = check50.run("python3 favorites.py").stdin("Scrabble", prompt=False)
+    result.stdout("2", regex=False).exit(0)
+
+
+@check50.check(test_python_valid)
+def test_plurality():
+    """counts votes for 'Plurality' correctly (4)"""
+    result = check50.run("python3 favorites.py").stdin("Plurality", prompt=False)
+    result.stdout("4", regex=False).exit(0)
+
+
+@check50.check(test_python_valid)
 def test_not_found():
     """handles a problem that doesn't exist in data"""
     result = check50.run("python3 favorites.py").stdin("NotARealProblem", prompt=False)
