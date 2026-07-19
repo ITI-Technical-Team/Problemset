@@ -63,6 +63,11 @@ def test_mixed_longer():
     check50.run("./minimum-difference").stdin("10\n15 3 27 8 9 30 21 22 5 100", prompt=False).stdout("1", regex=False).exit(0)
 
 @check50.check(test_compile)
+def test_last_elements_diff():
+    """finds minimum difference when it occurs at the end of the sorted array"""
+    check50.run("./minimum-difference").stdin("5\n1 10 20 30 31", prompt=False).stdout("1", regex=False).exit(0)
+
+@check50.check(test_compile)
 def test_random():
     """finds minimum difference in random array correctly"""
     n = random.randint(10, 50)
