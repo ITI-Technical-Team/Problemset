@@ -14,10 +14,12 @@ def setup_db():
         LAT_N INTEGER, LONG_W INTEGER
     )""")
     with open("STATION.csv") as f:
+        rows = list(csv.DictReader(f))
+        # Insert all rows twice to create duplicate cities
+        data = [(r["ID"], r["CITY"], r["STATE"], r["LAT_N"], r["LONG_W"]) for r in rows]
         conn.executemany(
             "INSERT INTO STATION VALUES (?,?,?,?,?)",
-            [(r["ID"], r["CITY"], r["STATE"], r["LAT_N"], r["LONG_W"])
-             for r in csv.DictReader(f)]
+            data + data
         )
     conn.commit()
     conn.close()
