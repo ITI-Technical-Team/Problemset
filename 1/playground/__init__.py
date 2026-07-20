@@ -36,16 +36,26 @@ def has_sprites():
 
 @check50.check(valid_sb3)
 def has_loop():
-    """project contains at least 1 loop"""
+    """project contains a loop connected to an event and doing something"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
-    if not scratch_helper.check_loop(blocks):
-        raise check50.Failure("Did not find any loops (e.g., repeat, forever).")
+    if not scratch_helper.check_active_loop(blocks):
+        raise check50.Failure(
+            "Did not find a working loop.",
+            help="Make sure your loop (repeat, forever, or repeat until) is: "
+                 "(1) attached to a hat block like 'when green flag clicked', and "
+                 "(2) has at least one block inside it."
+        )
 
 @check50.check(valid_sb3)
 def has_conditional():
-    """project contains at least 1 conditional"""
+    """project contains a conditional connected to an event and doing something"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
-    if not scratch_helper.check_conditional(blocks):
-        raise check50.Failure("Did not find any conditionals (e.g., if, if-else).")
+    if not scratch_helper.check_active_conditional(blocks):
+        raise check50.Failure(
+            "Did not find a working conditional.",
+            help="Make sure your if/if-else block is: "
+                 "(1) attached to a hat block like 'when green flag clicked', and "
+                 "(2) has at least one block inside it."
+        )

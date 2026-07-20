@@ -4,6 +4,18 @@ import check50
 
 import glob
 
+# Hat block opcodes — blocks that start a script
+HAT_OPCODES = {
+    "event_whenflagclicked",
+    "event_whenkeypressed",
+    "event_whenthisspriteclicked",
+    "event_whenbackdropswitchesto",
+    "event_whengreaterthan",
+    "event_whenbroadcastreceived",
+    "control_start_as_clone",
+    "procedures_definition",
+}
+
 def get_project(filename=None):
     """Extracts and parses project.json from the given Scratch .sb3 file."""
     if filename is None:
@@ -36,15 +48,73 @@ def count_opcode(blocks, opcode):
     """Counts the number of blocks with the given opcode."""
     return sum(1 for b in blocks.values() if b.get("opcode") == opcode)
 
+def is_connected_to_hat(block_id, blocks):
+    """Checks if the given block is part of a script connected to a hat block.
+    Traces the parent chain upward until it finds a hat block or dead-ends."""
+    current_id = block_id
+    visited = set()
+    while current_id:
+        if current_id in visited:
+            return False  # circular reference guard
+        visited.add(current_id)
+        block = blocks.get(current_id)
+        if not block:
+            return False
+        if block.get("opcode") in HAT_OPCODES:
+            return True
+        parent_id = block.get("parent")
+        if not parent_id:
+            return False
+        current_id = parent_id
+    return False
+
+def block_has_substack(block, blocks):
+    """Checks if a loop or conditional block has at least one block inside it (non-empty)."""
+    inputs = block.get("inputs", {})
+    for key in ("SUBSTACK", "SUBSTACK2"):
+        if key in inputs:
+            inner = inputs[key]
+            if isinstance(inner, list) and len(inner) > 1:
+                inner_id = inner[1]
+                if inner_id and isinstance(inner_id, str) and inner_id in blocks:
+                    return True
+    return False
+
 def check_loop(blocks):
-    """Checks if a loop exists."""
+    """Checks if a loop exists that is connected to a hat block."""
     loop_opcodes = ["control_repeat", "control_forever", "control_repeat_until"]
-    return any(has_opcode(blocks, op) for op in loop_opcodes)
+    for block_id, block in blocks.items():
+        if block.get("opcode") in loop_opcodes:
+            if is_connected_to_hat(block_id, blocks):
+                return True
+    return False
 
 def check_conditional(blocks):
-    """Checks if a conditional exists."""
+    """Checks if a conditional exists that is connected to a hat block."""
     conditional_opcodes = ["control_if", "control_if_else"]
-    return any(has_opcode(blocks, op) for op in conditional_opcodes)
+    for block_id, block in blocks.items():
+        if block.get("opcode") in conditional_opcodes:
+            if is_connected_to_hat(block_id, blocks):
+                return True
+    return False
+
+def check_active_loop(blocks):
+    """Checks if a loop exists that is connected to a hat block AND has blocks inside it."""
+    loop_opcodes = ["control_repeat", "control_forever", "control_repeat_until"]
+    for block_id, block in blocks.items():
+        if block.get("opcode") in loop_opcodes:
+            if is_connected_to_hat(block_id, blocks) and block_has_substack(block, blocks):
+                return True
+    return False
+
+def check_active_conditional(blocks):
+    """Checks if a conditional exists that is connected to a hat block AND has blocks inside it."""
+    conditional_opcodes = ["control_if", "control_if_else"]
+    for block_id, block in blocks.items():
+        if block.get("opcode") in conditional_opcodes:
+            if is_connected_to_hat(block_id, blocks) and block_has_substack(block, blocks):
+                return True
+    return False
 
 def check_custom_block(blocks):
     """Checks if a custom block (function) exists."""
