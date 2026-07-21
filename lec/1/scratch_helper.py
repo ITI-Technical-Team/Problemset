@@ -40,6 +40,39 @@ def get_blocks(project):
                 blocks[block_id] = block
     return blocks
 
+def get_target_blocks(target):
+    """Returns a dict of blocks for a specific target sprite/stage."""
+    blocks = {}
+    for block_id, block in target.get("blocks", {}).items():
+        if isinstance(block, dict):
+            blocks[block_id] = block
+    return blocks
+
+def get_block_input_value(block, input_name, blocks=None):
+    """Extracts raw value or connected block ID from a block's input field."""
+    inputs = block.get("inputs", {})
+    if input_name not in inputs:
+        return None
+    val = inputs[input_name]
+    if isinstance(val, list):
+        if len(val) >= 2:
+            second = val[1]
+            if isinstance(second, list) and len(second) >= 2:
+                return str(second[1])
+            elif isinstance(second, str):
+                return second
+    return None
+
+def get_block_field_value(block, field_name):
+    """Extracts field value from a block's fields."""
+    fields = block.get("fields", {})
+    if field_name not in fields:
+        return None
+    val = fields[field_name]
+    if isinstance(val, list) and len(val) >= 1:
+        return str(val[0])
+    return str(val)
+
 def has_opcode(blocks, opcode):
     """Checks if there is at least one block with the given opcode."""
     return any(b.get("opcode") == opcode for b in blocks.values())
