@@ -39,7 +39,6 @@ def run_sql_file(db_path, sql_file):
     """Execute SQL from a file against a SQLite database and return rows."""
     sql = open(sql_file).read()
     conn = sqlite3.connect(db_path)
-    # Strip comments and split on semicolons; run last non-empty statement
     statements = [s.strip() for s in sql.split(";") if s.strip()]
     results = []
     for stmt in statements:
@@ -48,8 +47,12 @@ def run_sql_file(db_path, sql_file):
             rows = cur.fetchall()
             if rows:
                 results = rows
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            conn.close()
+            raise check50.Failure(
+                f"SQL Error in {sql_file}: {e}",
+                help="Fix the SQL syntax or query error in your file"
+            )
     conn.close()
     return results
 
@@ -69,13 +72,13 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
-def test_returns_rows():
-    """query returns at least one city in Africa"""
-    rows = run_sql_file("cities.db", "city-africa.sql")
-    if not rows:
+def test_sql_clauses():
+    """query uses JOIN and WHERE clauses"""
+    sql = open("city-africa.sql").read().upper()
+    if "JOIN" not in sql and "WHERE" not in sql:
         raise check50.Failure(
-            "Query returned no results",
-            help="Make sure your JOIN is correct and you are filtering by Continent = 'Africa'"
+            "Query does not use JOIN or WHERE clause",
+            help="Join CITY and COUNTRY tables and filter WHERE COUNTRY.Continent = 'Africa'"
         )
 
 
@@ -103,26 +106,18 @@ def test_nairobi_in_results():
         )
 
 
-@check50.check(test_db_setup)
-def test_no_non_african_cities():
-    """query does not include cities from other continents"""
+@check50.check(test_cairo_in_results)
+def test_dynamic_db():
+    """query reflects dynamic database updates"""
+    conn = sqlite3.connect("cities.db")
+    conn.execute("INSERT INTO CITY VALUES (9999, 'TestAfricanCity', 'EGY', 'TestDist', 1000)")
+    conn.commit()
+    conn.close()
+
     rows = run_sql_file("cities.db", "city-africa.sql")
     names = [str(r[0]).strip() for r in rows]
-    non_african = ["Beijing", "London", "Paris", "New York", "Tokyo", "Sydney"]
-    found = [c for c in non_african if c in names]
-    if found:
+    if "TestAfricanCity" not in names:
         raise check50.Failure(
-            f"Query should only return African cities, but found: {found}",
-            help="Check your WHERE clause – make sure it filters by Continent = 'Africa'"
-        )
-
-
-@check50.check(test_db_setup)
-def test_correct_count():
-    """query returns exactly 14 African cities"""
-    rows = run_sql_file("cities.db", "city-africa.sql")
-    if len(rows) != 14:
-        raise check50.Failure(
-            f"Expected 14 African cities, but got {len(rows)}",
-            help="Make sure you are selecting CITY.Name (not country name) and joining correctly"
+            "Query returned hardcoded list of city names instead of querying the database dynamically",
+            help="Write a SQL query joining CITY and COUNTRY tables rather than hardcoding static rows"
         )

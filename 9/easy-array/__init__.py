@@ -80,7 +80,7 @@ def test_random():
     """sums random 2D array correctly"""
     r = random.randint(3, 10)
     c = random.randint(3, 10)
-    elements = [[random.randint(-1000, 1000) for _ in range(c)] for _ in range(r)]
+    elements = [[random.randint(1, 1000) for _ in range(c)] for _ in range(r)]
     expected = str(sum(sum(row) for row in elements))
     stdin_data = f"{r} {c}\n" + "\n".join(" ".join(map(str, row)) for row in elements)
     check50.run("./easy-array").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)

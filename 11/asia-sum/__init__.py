@@ -47,8 +47,12 @@ def run_sql_file(db_path, sql_file):
             rows = cur.fetchall()
             if rows:
                 results = rows
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            conn.close()
+            raise check50.Failure(
+                f"SQL Error in {sql_file}: {e}",
+                help="Fix the SQL syntax or query error in your file"
+            )
     conn.close()
     return results
 
@@ -68,6 +72,17 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def test_sql_clauses():
+    """query uses JOIN and SUM()"""
+    sql = open("asia-sum.sql").read().upper()
+    if "SUM" not in sql or ("JOIN" not in sql and "WHERE" not in sql):
+        raise check50.Failure(
+            "Query does not use SUM() or JOIN/WHERE filtering",
+            help="Use SUM(CITY.POPULATION) and JOIN COUNTRY ON CITY.CountryCode = COUNTRY.Code"
+        )
+
+
+@check50.check(test_db_setup)
 def test_single_number():
     """query returns exactly one row (the total)"""
     rows = run_sql_file("cities.db", "asia-sum.sql")
@@ -82,9 +97,13 @@ def test_single_number():
 def test_correct_sum():
     """Asia total population sum is 311021451"""
     rows = run_sql_file("cities.db", "asia-sum.sql")
-    if not rows:
-        raise check50.Failure("Query returned no results")
-    val = int(float(str(rows[0][0])))
+    if not rows or not rows[0] or rows[0][0] is None:
+        raise check50.Failure("Query returned no results or NULL")
+    try:
+        val = int(float(str(rows[0][0])))
+    except (ValueError, TypeError):
+        raise check50.Failure(f"Could not parse numeric result, got: {rows[0][0]}")
+
     if val != 311021451:
         raise check50.Failure(
             f"Expected the sum to be 311021451, but got: {val}",
@@ -92,16 +111,20 @@ def test_correct_sum():
         )
 
 
-@check50.check(test_db_setup)
-def test_not_all_cities_sum():
-    """query does not return sum for all cities (only Asia)"""
+@check50.check(test_correct_sum)
+def test_dynamic_db():
+    """query reflects dynamic database updates"""
+    if not os.path.exists("cities.db"):
+        setup_db()
+    conn = sqlite3.connect("cities.db")
+    conn.execute("UPDATE CITY SET POPULATION = POPULATION + 1000 WHERE NAME = 'Tokyo'")
+    conn.commit()
+    conn.close()
+
     rows = run_sql_file("cities.db", "asia-sum.sql")
-    if not rows:
-        return
     val = int(float(str(rows[0][0])))
-    # Total of all cities would be much larger than 311M
-    if val > 700000000:
+    if val != 311022451:
         raise check50.Failure(
-            f"The sum ({val}) is too large — make sure you filter for Asia only",
-            help="Add WHERE COUNTRY.Continent = 'Asia' to your query"
+            "Query returned hardcoded population value instead of dynamically summing database rows",
+            help="Write a SQL query using JOIN and SUM() rather than hardcoding static numbers"
         )

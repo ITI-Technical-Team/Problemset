@@ -47,8 +47,12 @@ def run_sql_file(db_path, sql_file):
             rows = cur.fetchall()
             if rows:
                 results = rows
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            conn.close()
+            raise check50.Failure(
+                f"SQL Error in {sql_file}: {e}",
+                help="Fix the SQL syntax or query error in your file"
+            )
     conn.close()
     return results
 
@@ -68,6 +72,17 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def test_sql_clauses():
+    """query uses GROUP BY and AVG()"""
+    sql = open("continent-avg.sql").read().upper()
+    if "GROUP BY" not in sql or "AVG" not in sql:
+        raise check50.Failure(
+            "Query does not use GROUP BY or AVG()",
+            help="Use GROUP BY COUNTRY.Continent and FLOOR(AVG(CITY.Population))"
+        )
+
+
+@check50.check(test_db_setup)
 def test_returns_6_rows():
     """query returns one row per continent (6 continents)"""
     rows = run_sql_file("cities.db", "continent-avg.sql")
@@ -82,14 +97,12 @@ def test_returns_6_rows():
 def test_africa_avg():
     """Africa average population is 4929564"""
     rows = run_sql_file("cities.db", "continent-avg.sql")
-    # Look for Africa row
     africa_row = next((r for r in rows if "Africa" in str(r)), None)
     if africa_row is None:
         raise check50.Failure(
             "Expected 'Africa' in the results",
             help="Make sure you SELECT COUNTRY.Continent in your query"
         )
-    # The avg value (second column) should be 4929564
     avg_val = int(float(str(africa_row[1])))
     if avg_val != 4929564:
         raise check50.Failure(
@@ -116,14 +129,22 @@ def test_asia_avg():
         )
 
 
-@check50.check(test_db_setup)
-def test_uses_floor():
-    """average is floored (not rounded) to nearest integer"""
+@check50.check(test_africa_avg)
+def test_dynamic_db():
+    """query reflects dynamic database updates"""
+    if not os.path.exists("cities.db"):
+        setup_db()
+    conn = sqlite3.connect("cities.db")
+    # Increase Cairo (African city) population by 14 (14 cities in Africa) to increase avg by 1
+    conn.execute("UPDATE CITY SET POPULATION = POPULATION + 14 WHERE NAME = 'Cairo'")
+    conn.commit()
+    conn.close()
+
     rows = run_sql_file("cities.db", "continent-avg.sql")
-    for row in rows:
-        val = row[1]
-        if isinstance(val, float) and val != int(val):
-            raise check50.Failure(
-                f"Average should be floored to an integer, but got decimal: {val}",
-                help="Use FLOOR() or CAST(... AS INTEGER) to round down"
-            )
+    africa_row = next((r for r in rows if "Africa" in str(r)), None)
+    avg_val = int(float(str(africa_row[1])))
+    if avg_val != 4929565:
+        raise check50.Failure(
+            "Query returned hardcoded population averages instead of dynamically calculating from database rows",
+            help="Write a SQL query using JOIN, GROUP BY, and AVG() rather than UNION SELECT hardcoded values"
+        )

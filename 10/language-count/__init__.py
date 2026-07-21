@@ -15,6 +15,17 @@ def test_python_valid():
 
 
 @check50.check(test_python_valid)
+def test_reads_csv():
+    """language-count.py opens and processes favorites.csv"""
+    code = open("language-count.py", encoding="utf-8", errors="replace").read()
+    if "open(" not in code and "csv" not in code and "pandas" not in code:
+        raise check50.Failure(
+            "language-count.py does not open or process favorites.csv",
+            help="Use open('favorites.csv') or csv.DictReader to read and count the CSV data"
+        )
+
+
+@check50.check(test_python_valid)
 def test_python_in_output():
     """output contains 'Python: 280'"""
     result = check50.run("python3 language-count.py")
@@ -56,7 +67,6 @@ def test_descending_order():
     result = check50.run("python3 language-count.py")
     out = result.stdout().strip()
     lines = [l.strip() for l in out.splitlines() if l.strip()]
-    # Extract counts from lines
     counts = []
     for line in lines:
         parts = line.split(":")
@@ -86,4 +96,22 @@ def test_python_is_first():
         raise check50.Failure(
             f"Python should be first (it has the most votes: 280), but first line was: '{first_line}'",
             help="Sort from highest to lowest frequency"
+        )
+
+
+@check50.check(test_reads_csv)
+def test_dynamic_csv():
+    """processes modified CSV dataset dynamically"""
+    with open("favorites.csv", "w", encoding="utf-8") as f:
+        f.write("Timestamp,language,problem\n")
+        f.write("1/1/2025,Scratch,Test\n")
+        f.write("1/1/2025,Scratch,Test\n")
+        f.write("1/1/2025,C,Test\n")
+
+    result = check50.run("python3 language-count.py")
+    out = result.stdout()
+    if "Scratch: 2" not in out and "Scratch:2" not in out:
+        raise check50.Failure(
+            "Program did not output counts from modified favorites.csv file",
+            help="Read and parse favorites.csv dynamically using open() and csv library rather than hardcoding numbers"
         )

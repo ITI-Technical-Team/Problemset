@@ -159,18 +159,18 @@ def has_submit_button():
     if not form:
         raise check50.Failure("Missing <form> element")
         
-    has_btn = form.find("button", type=lambda t: t and t.lower() == "submit") or \
-              form.find("input", type=lambda t: t and t.lower() == "submit")
-              
-    if not has_btn:
-        if form.find("button") or form.find("input"):
-            raise check50.Failure(
-                "Submit button is missing type=\"submit\" attribute",
-                help="Add type=\"submit\" to your button: `<button type=\"submit\">Send</button>`"
-            )
+    btn = form.find("button")
+    if not btn:
         raise check50.Failure(
-            "Missing submit button",
-            help="Add a `<button type=\"submit\">Send</button>` or `<input type=\"submit\">` inside the form"
+            "Missing <button> element — use a <button> tag for the submit button",
+            help="Add `<button type=\"submit\">Send</button>` inside the form"
+        )
+
+    btn_type = (btn.get("type") or "").strip().lower()
+    if btn_type != "submit":
+        raise check50.Failure(
+            "Submit button is missing type=\"submit\" attribute",
+            help="Add type=\"submit\" to your button: `<button type=\"submit\">Send</button>`"
         )
 
 

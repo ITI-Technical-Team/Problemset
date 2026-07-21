@@ -8,9 +8,13 @@ def _read(path):
         return f.read()
 
 
+def _uncommented_html(path="register.html"):
+    raw = _read(path)
+    return re.sub(r"<!--.*?-->", "", raw, flags=re.DOTALL)
+
+
 def _check_tag_closed(filename, tag):
-    raw_html = _read(filename)
-    clean_html = re.sub(r"<!--.*?-->", "", raw_html, flags=re.DOTALL)
+    clean_html = _uncommented_html(filename)
     open_count = len(re.findall(rf"<{tag}\b", clean_html, re.IGNORECASE))
     close_count = len(re.findall(rf"</{tag}\s*>", clean_html, re.IGNORECASE))
     if open_count > close_count:
@@ -31,9 +35,7 @@ def exists():
 @check50.check(exists)
 def has_doctype():
     """register.html has <!DOCTYPE html>"""
-    raw = _read("register.html")
-    # Strip HTML comments so a commented-out DOCTYPE fails
-    uncommented = re.sub(r'<!--.*?-->', '', raw, flags=re.DOTALL)
+    uncommented = _uncommented_html("register.html")
     if not re.search(r'<!doctype\s+html', uncommented, re.IGNORECASE):
         raise check50.Failure(
             "Missing <!DOCTYPE html> declaration",
@@ -48,7 +50,7 @@ def has_doctype():
 def has_title():
     """<title> reads 'Course Registration'"""
     _check_tag_closed("register.html", "title")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.title or "course registration" not in soup.title.get_text().lower():
         raise check50.Failure(
@@ -61,7 +63,7 @@ def has_title():
 def has_form():
     """page has a <form> element"""
     _check_tag_closed("register.html", "form")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     if not soup.find("form"):
         raise check50.Failure(
@@ -76,7 +78,7 @@ def has_form():
 def has_fieldset():
     """form has a <fieldset> element (required!)"""
     _check_tag_closed("register.html", "fieldset")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form or not form.find("fieldset"):
@@ -90,7 +92,7 @@ def has_fieldset():
 def has_legend():
     """<fieldset> has a <legend>"""
     _check_tag_closed("register.html", "legend")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     fieldset = soup.find("fieldset")
     legend = fieldset.find("legend") if fieldset else None
@@ -111,19 +113,19 @@ def has_legend():
 @check50.check(exists)
 def has_first_name_input():
     """form has a text input for First Name with placeholder"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     text_inputs = form.find_all("input", type=lambda t: t and t.lower() == "text")
     if not text_inputs:
         raise check50.Failure(
             "Missing <input type='text'> for First Name",
             help="Add <input type='text' placeholder='ex: ahmed'> for the first name"
         )
-        
+
     has_placeholder = any(inp.get("placeholder") for inp in text_inputs)
     if not has_placeholder:
         raise check50.Failure(
@@ -135,12 +137,12 @@ def has_first_name_input():
 @check50.check(exists)
 def has_multiple_text_inputs():
     """form has at least 3 text inputs (first name, second name, phone)"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     text_inputs = form.find_all("input", type=lambda t: t and t.lower() == "text")
     if len(text_inputs) < 3:
         raise check50.Failure(
@@ -152,7 +154,7 @@ def has_multiple_text_inputs():
 @check50.check(exists)
 def has_email_input():
     """form has <input type='email'>"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form or not form.find("input", type=lambda t: t and t.lower() == "email"):
@@ -167,12 +169,12 @@ def has_email_input():
 @check50.check(exists)
 def has_two_password_inputs():
     """form has 2 <input type='password'> (password + repassword)"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     passwords = form.find_all("input", type=lambda t: t and t.lower() == "password")
     if len(passwords) < 2:
         raise check50.Failure(
@@ -185,11 +187,10 @@ def has_two_password_inputs():
 def has_repassword_label():
     """form has a label for Repassword"""
     _check_tag_closed("register.html", "label")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     labels = soup.find_all("label")
     has_repass = any("repassword" in lbl.get_text().lower() for lbl in labels)
-    # Check general text if not inside a label tag
     if not has_repass and "repassword" not in html.lower():
         raise check50.Failure(
             "Missing 'Repassword' label",
@@ -202,7 +203,7 @@ def has_repassword_label():
 @check50.check(exists)
 def has_2_radio_buttons():
     """form has 2 radio buttons for gender (Male / Female)"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
@@ -215,7 +216,6 @@ def has_2_radio_buttons():
             help="Add <input type='radio' name='gender' value='male'> Male and <input type='radio' name='gender' value='female'> Female"
         )
 
-    # All radio buttons must share the same name — different names break grouping
     names = set(r.get("name", "").strip().lower() for r in radios)
     names.discard("")
     if len(names) > 1:
@@ -224,7 +224,6 @@ def has_2_radio_buttons():
             help="Set the same name (e.g. name='gender') on ALL gender radio buttons"
         )
 
-    # Check page text for Male and Female
     text_content = soup.get_text().lower()
     if "male" not in text_content or "female" not in text_content:
         raise check50.Failure(
@@ -238,19 +237,19 @@ def has_2_radio_buttons():
 @check50.check(exists)
 def has_checkboxes():
     """form has at least 2 checkboxes (Student, Graduated)"""
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     checkboxes = form.find_all("input", type=lambda t: t and t.lower() == "checkbox")
     if len(checkboxes) < 2:
         raise check50.Failure(
             f"Found {len(checkboxes)} checkbox(es), expected at least 2 (Student, Graduated)",
             help="Add <input type='checkbox'> for 'Student' and 'Graduated'"
         )
-        
+
     text_content = soup.get_text().lower()
     if "student" not in text_content or "graduated" not in text_content:
         raise check50.Failure(
@@ -266,19 +265,19 @@ def has_select_with_options():
     """form has a <select> drop-down with at least 3 <option> items (university)"""
     _check_tag_closed("register.html", "select")
     _check_tag_closed("register.html", "option")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     select = form.find("select")
     if not select:
         raise check50.Failure(
             "Missing <select> element for university",
             help="Add a <select> drop-down for choosing a university (e.g. AUC, Cairo, Ain Shams)"
         )
-        
+
     options = select.find_all("option")
     if len(options) < 3:
         raise check50.Failure(
@@ -293,13 +292,12 @@ def has_select_with_options():
 def has_submit_button():
     """form has <input type="submit" value="SUBMIT">"""
     _check_tag_closed("register.html", "button")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
 
-    # Must be <input type="submit"> — a plain <button> is not accepted
     submit_input = form.find("input", type=lambda t: t and t.lower() == "submit")
     if not submit_input:
         raise check50.Failure(
@@ -307,7 +305,6 @@ def has_submit_button():
             help="Use <input type='submit' value='SUBMIT'> — a plain <button> element is not accepted here"
         )
 
-    # Value must be "SUBMIT" (case-insensitive)
     value = (submit_input.get("value") or "").strip()
     if value.upper() != "SUBMIT":
         raise check50.Failure(
@@ -320,15 +317,15 @@ def has_submit_button():
 def has_reset_button():
     """form has <input type='reset'> or <button type='reset'>"""
     _check_tag_closed("register.html", "button")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     has_res = form.find("input", type=lambda t: t and t.lower() == "reset") or \
               form.find("button", type=lambda t: t and t.lower() == "reset")
-              
+
     if not has_res:
         raise check50.Failure(
             "Missing reset button — a reset option is required",
@@ -342,12 +339,12 @@ def has_reset_button():
 def has_labels():
     """form has <label> elements for its inputs"""
     _check_tag_closed("register.html", "label")
-    html = _read("register.html")
+    html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     labels = form.find_all("label")
     if len(labels) < 4:
         raise check50.Failure(

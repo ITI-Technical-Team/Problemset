@@ -84,11 +84,13 @@ def has_button_trigger():
             help="Label your button as 'Click Me': <button onclick=\"showInfo()\">Click Me</button>"
         )
         
-    if "showinfo()" not in html:
+    onclick = (btn.get("onclick") or "").lower().replace(" ", "")
+    if "showinfo()" not in onclick:
         raise check50.Failure(
             "Button does not trigger showInfo() on click",
             help="Add onclick=\"showInfo()\" to your button element"
         )
+
 
 
 # ─── JS checks ────────────────────────────────────────────────────────────────

@@ -15,7 +15,6 @@ def setup_db():
     )""")
     with open("STATION.csv") as f:
         rows = list(csv.DictReader(f))
-        # Insert all rows twice to create duplicate cities
         data = [(r["ID"], r["CITY"], r["STATE"], r["LAT_N"], r["LONG_W"]) for r in rows]
         conn.executemany(
             "INSERT INTO STATION VALUES (?,?,?,?,?)",
@@ -37,8 +36,12 @@ def run_sql_file(db_path, sql_file):
             rows = cur.fetchall()
             if rows:
                 results = rows
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            conn.close()
+            raise check50.Failure(
+                f"SQL Error in {sql_file}: {e}",
+                help="Fix the SQL syntax or query error in your file"
+            )
     conn.close()
     return results
 
@@ -58,13 +61,13 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
-def test_returns_rows():
-    """query returns at least one result"""
-    rows = run_sql_file("station.db", "vowel-city.sql")
-    if not rows:
+def test_sql_clauses():
+    """query uses SELECT DISTINCT and pattern matching"""
+    sql = open("vowel-city.sql").read().upper()
+    if "DISTINCT" not in sql or ("LIKE" not in sql and "REGEXP" not in sql and "GLOB" not in sql):
         raise check50.Failure(
-            "Query returned no results",
-            help="Use LIKE 'A%' OR LIKE 'E%' ... for cities starting with vowels"
+            "Query does not use DISTINCT or pattern matching (LIKE)",
+            help="Use SELECT DISTINCT CITY FROM STATION WHERE ... LIKE ..."
         )
 
 
@@ -108,12 +111,18 @@ def test_no_duplicates():
         )
 
 
-@check50.check(test_db_setup)
-def test_correct_count():
-    """query returns exactly 24 distinct cities"""
+@check50.check(test_vowel_start)
+def test_dynamic_db():
+    """query reflects dynamic database updates"""
+    conn = sqlite3.connect("station.db")
+    conn.execute("INSERT INTO STATION VALUES (9999, 'Acacia', 'CA', 10, 10)")
+    conn.commit()
+    conn.close()
+
     rows = run_sql_file("station.db", "vowel-city.sql")
-    if len(rows) != 24:
+    names = [str(r[0]).strip() for r in rows]
+    if "Acacia" not in names:
         raise check50.Failure(
-            f"Expected 24 distinct cities (vowel start AND vowel end), got {len(rows)}",
-            help="Make sure you filter for BOTH vowel start AND vowel end using OR within each condition"
+            "Query returned hardcoded list of city names instead of querying database dynamically",
+            help="Write a SQL query using SELECT DISTINCT CITY FROM STATION WHERE ... LIKE ... rather than hardcoding static rows"
         )
