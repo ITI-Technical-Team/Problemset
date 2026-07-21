@@ -29,6 +29,17 @@ def has_custom_block():
         raise check50.Failure("Did not find any custom blocks.", help="Create a custom block using 'Make a Block' in the 'My Blocks' category.")
 
 @check50.check(has_custom_block)
+def custom_block_has_body():
+    """custom block has code blocks attached under 'define'"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
+    if not scratch_helper.check_custom_block_has_body(blocks):
+        raise check50.Failure(
+            "Custom block 'define' block has no code attached.",
+            help="Attach code blocks directly under the 'define' block for your custom function."
+        )
+
+@check50.check(has_custom_block)
 def has_sprites():
     """project contains at least one sprite"""
     project = scratch_helper.get_project()

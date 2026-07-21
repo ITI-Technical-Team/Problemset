@@ -68,6 +68,25 @@ def is_connected_to_hat(block_id, blocks):
         current_id = parent_id
     return False
 
+def is_inside_custom_block(block_id, blocks):
+    """Traces parent chain upward to check if block_id is attached under a procedures_definition block."""
+    current_id = block_id
+    visited = set()
+    while current_id:
+        if current_id in visited:
+            return False
+        visited.add(current_id)
+        block = blocks.get(current_id)
+        if not block:
+            return False
+        if block.get("opcode") == "procedures_definition":
+            return True
+        parent_id = block.get("parent")
+        if not parent_id:
+            return False
+        current_id = parent_id
+    return False
+
 def block_has_substack(block, blocks):
     """Checks if a loop or conditional block has at least one block inside it (non-empty)."""
     inputs = block.get("inputs", {})
@@ -113,6 +132,41 @@ def check_active_conditional(blocks):
     for block_id, block in blocks.items():
         if block.get("opcode") in conditional_opcodes:
             if is_connected_to_hat(block_id, blocks) and block_has_substack(block, blocks):
+                return True
+    return False
+
+def check_active_loop_in_custom_block(blocks):
+    """Checks if a non-empty loop exists INSIDE a custom block definition."""
+    loop_opcodes = ["control_repeat", "control_forever", "control_repeat_until"]
+    for block_id, block in blocks.items():
+        if block.get("opcode") in loop_opcodes:
+            if is_inside_custom_block(block_id, blocks) and block_has_substack(block, blocks):
+                return True
+    return False
+
+def check_active_conditional_in_custom_block(blocks):
+    """Checks if a non-empty conditional exists INSIDE a custom block definition."""
+    conditional_opcodes = ["control_if", "control_if_else"]
+    for block_id, block in blocks.items():
+        if block.get("opcode") in conditional_opcodes:
+            if is_inside_custom_block(block_id, blocks) and block_has_substack(block, blocks):
+                return True
+    return False
+
+def check_custom_block_has_body(blocks):
+    """Checks if at least one procedures_definition block has code attached (next pointer points to a valid block)."""
+    for block_id, block in blocks.items():
+        if block.get("opcode") == "procedures_definition":
+            next_id = block.get("next")
+            if next_id and isinstance(next_id, str) and next_id in blocks:
+                return True
+    return False
+
+def check_custom_block_called(blocks):
+    """Checks if a custom block is called (procedures_call) and connected to an event/hat block."""
+    for block_id, block in blocks.items():
+        if block.get("opcode") == "procedures_call":
+            if is_connected_to_hat(block_id, blocks):
                 return True
     return False
 
