@@ -1,0 +1,6 @@
+lab50:
+  version: 3.0.0
+
+check50:
+  files:
+    - !require queue-line.cpp
