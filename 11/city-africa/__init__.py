@@ -72,6 +72,12 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def valid_sql_syntax():
+    """SQL query has valid syntax (executes without errors)"""
+    run_sql_file("cities.db", "city-africa.sql")
+
+
+@check50.check(valid_sql_syntax)
 def test_sql_clauses():
     """query uses JOIN and WHERE clauses"""
     sql = open("city-africa.sql").read().upper()
@@ -82,7 +88,7 @@ def test_sql_clauses():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_cairo_in_results():
     """query results include 'Cairo'"""
     rows = run_sql_file("cities.db", "city-africa.sql")
@@ -94,7 +100,7 @@ def test_cairo_in_results():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_nairobi_in_results():
     """query results include 'Nairobi'"""
     rows = run_sql_file("cities.db", "city-africa.sql")

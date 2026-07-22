@@ -72,6 +72,12 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def valid_sql_syntax():
+    """SQL query has valid syntax (executes without errors)"""
+    run_sql_file("cities.db", "asia-sum.sql")
+
+
+@check50.check(valid_sql_syntax)
 def test_sql_clauses():
     """query uses JOIN and SUM()"""
     sql = open("asia-sum.sql").read().upper()
@@ -82,7 +88,7 @@ def test_sql_clauses():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_single_number():
     """query returns exactly one row (the total)"""
     rows = run_sql_file("cities.db", "asia-sum.sql")
@@ -93,7 +99,7 @@ def test_single_number():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_correct_sum():
     """Asia total population sum is 311021451"""
     rows = run_sql_file("cities.db", "asia-sum.sql")

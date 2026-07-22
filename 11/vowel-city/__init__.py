@@ -61,6 +61,12 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def valid_sql_syntax():
+    """SQL query has valid syntax (executes without errors)"""
+    run_sql_file("station.db", "vowel-city.sql")
+
+
+@check50.check(valid_sql_syntax)
 def test_sql_clauses():
     """query uses SELECT DISTINCT and pattern matching"""
     sql = open("vowel-city.sql").read().upper()
@@ -71,7 +77,7 @@ def test_sql_clauses():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_vowel_start():
     """all results start with a vowel"""
     rows = run_sql_file("station.db", "vowel-city.sql")
@@ -84,7 +90,7 @@ def test_vowel_start():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_vowel_end():
     """all results end with a vowel"""
     rows = run_sql_file("station.db", "vowel-city.sql")
@@ -97,7 +103,7 @@ def test_vowel_end():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_no_duplicates():
     """results contain no duplicate city names"""
     rows = run_sql_file("station.db", "vowel-city.sql")

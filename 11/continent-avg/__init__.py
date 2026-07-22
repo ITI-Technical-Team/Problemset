@@ -72,6 +72,12 @@ def test_db_setup():
 
 
 @check50.check(test_db_setup)
+def valid_sql_syntax():
+    """SQL query has valid syntax (executes without errors)"""
+    run_sql_file("cities.db", "continent-avg.sql")
+
+
+@check50.check(valid_sql_syntax)
 def test_sql_clauses():
     """query uses GROUP BY and AVG()"""
     sql = open("continent-avg.sql").read().upper()
@@ -82,7 +88,7 @@ def test_sql_clauses():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_returns_6_rows():
     """query returns one row per continent (6 continents)"""
     rows = run_sql_file("cities.db", "continent-avg.sql")
@@ -93,7 +99,7 @@ def test_returns_6_rows():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_africa_avg():
     """Africa average population is 4929564"""
     rows = run_sql_file("cities.db", "continent-avg.sql")
@@ -111,7 +117,7 @@ def test_africa_avg():
         )
 
 
-@check50.check(test_db_setup)
+@check50.check(valid_sql_syntax)
 def test_asia_avg():
     """Asia average population is 11107908"""
     rows = run_sql_file("cities.db", "continent-avg.sql")
