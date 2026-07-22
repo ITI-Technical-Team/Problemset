@@ -24,10 +24,12 @@ class RobustRun(check50.run):
 
 check50.run = RobustRun
 
+
 @check50.check()
 def exists():
     """calculator.cpp exists"""
     check50.exists("calculator.cpp")
+
 
 @check50.check(exists)
 def test_compile():
@@ -37,20 +39,68 @@ def test_compile():
     if _res.returncode != 0:
         raise check50.Failure(_res.stderr or _res.stdout)
 
+
 @check50.check(test_compile)
 def test_example():
     """handles input: 5 and 10"""
     check50.run("./calculator").stdin("5", prompt=False).stdin("10", prompt=False).stdout("5 + 10 = 15\n5 * 10 = 50\n5 - 10 = -5", regex=False).exit(0)
+
 
 @check50.check(test_compile)
 def test_negative():
     """handles negative numbers input: -3 and 4"""
     check50.run("./calculator").stdin("-3", prompt=False).stdin("4", prompt=False).stdout("-3 + 4 = 1\n-3 * 4 = -12\n-3 - 4 = -7", regex=False).exit(0)
 
+
 @check50.check(test_compile)
-def test_random():
-    """handles random inputs correctly"""
+def test_zeros():
+    """handles zero inputs: 0 and 0"""
+    check50.run("./calculator").stdin("0", prompt=False).stdin("0", prompt=False).stdout("0 + 0 = 0\n0 * 0 = 0\n0 - 0 = 0", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_zero_five():
+    """handles mixed zero input: 0 and 5"""
+    check50.run("./calculator").stdin("0", prompt=False).stdin("5", prompt=False).stdout("0 + 5 = 5\n0 * 5 = 0\n0 - 5 = -5", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_five_zero():
+    """handles mixed zero input: 5 and 0"""
+    check50.run("./calculator").stdin("5", prompt=False).stdin("0", prompt=False).stdout("5 + 0 = 5\n5 * 0 = 0\n5 - 0 = 5", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_equal():
+    """handles equal positive inputs: 7 and 7"""
+    check50.run("./calculator").stdin("7", prompt=False).stdin("7", prompt=False).stdout("7 + 7 = 14\n7 * 7 = 49\n7 - 7 = 0", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_equal_negative():
+    """handles equal negative inputs: -7 and -7"""
+    check50.run("./calculator").stdin("-7", prompt=False).stdin("-7", prompt=False).stdout("-7 + -7 = -14\n-7 * -7 = 49\n-7 - -7 = 0", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_large_numbers():
+    """handles larger inputs: 12345 and 54321"""
+    check50.run("./calculator").stdin("12345", prompt=False).stdin("54321", prompt=False).stdout("12345 + 54321 = 66666\n12345 * 54321 = 670592745\n12345 - 54321 = -41976", regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_random_1():
+    """handles random positive inputs correctly"""
     x = random.randint(1, 100)
     y = random.randint(1, 100)
+    expected = f"{x} + {y} = {x + y}\n{x} * {y} = {x * y}\n{x} - {y} = {x - y}"
+    check50.run("./calculator").stdin(str(x), prompt=False).stdin(str(y), prompt=False).stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
+def test_random_2():
+    """handles random mixed inputs correctly"""
+    x = random.randint(-100, 100)
+    y = random.randint(-100, 100)
     expected = f"{x} + {y} = {x + y}\n{x} * {y} = {x * y}\n{x} - {y} = {x - y}"
     check50.run("./calculator").stdin(str(x), prompt=False).stdin(str(y), prompt=False).stdout(expected, regex=False).exit(0)
