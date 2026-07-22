@@ -50,6 +50,31 @@ def both_sprites_have_scripts():
         )
 
 @check50.check(both_sprites_have_scripts)
+def has_two_active_event_scripts():
+    """both sprites have scripts started by event blocks"""
+    project = scratch_helper.get_project()
+    active_event_sprites = 0
+    for target in project.get("targets", []):
+        if not target.get("isStage"):
+            target_blocks = scratch_helper.get_target_blocks(target)
+            has_event_script = False
+            for b in target_blocks.values():
+                opcode = b.get("opcode", "")
+                if opcode.startswith("event_") or opcode == "control_start_as_clone":
+                    next_id = b.get("next")
+                    if next_id and isinstance(next_id, str) and next_id in target_blocks:
+                        has_event_script = True
+                        break
+            if has_event_script:
+                active_event_sprites += 1
+                
+    if active_event_sprites < 2:
+        raise check50.Failure(
+            "Not both sprites have event scripts.",
+            help="Make sure both sprites start their actions with an event block like 'when green flag clicked' or 'when I receive message'."
+        )
+
+@check50.check(both_sprites_have_scripts)
 def uses_broadcast_sync():
     """sprites communicate using broadcast and receive blocks"""
     project = scratch_helper.get_project()
@@ -67,36 +92,92 @@ def uses_broadcast_sync():
             help="Use 'broadcast [message1]' on the first sprite and 'when I receive [message1]' on the second sprite so they take turns speaking."
         )
 
-@check50.check(both_sprites_have_scripts)
-def dialogue_text_correct():
-    """sprites say the required dialogue text"""
-    project = scratch_helper.get_project()
+def get_block_text(b, blocks):
+    opcode = b.get("opcode")
+    inputs = b.get("inputs", {})
+    if opcode == "sensing_askandwait":
+        input_name = "QUESTION"
+    elif opcode in ("looks_say", "looks_sayforsecs", "looks_think", "looks_thinkforsecs"):
+        input_name = "MESSAGE"
+    else:
+        return None
 
+    inp = inputs.get(input_name)
+    if not inp or len(inp) < 2:
+        return None
+    val = inp[1]
+    if isinstance(val, list) and len(val) > 1:
+        return str(val[1]).strip()
+    elif isinstance(val, str):
+        return scratch_helper.get_block_input_value(b, input_name, blocks)
+    return None
+
+@check50.check(both_sprites_have_scripts)
+def uses_say_or_ask_or_think():
+    """project uses say, ask, or think blocks for dialogue"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
+    
+    dialogue_opcodes = ("looks_say", "looks_sayforsecs", "looks_think", "looks_thinkforsecs", "sensing_askandwait")
+    has_dialogue_block = any(b.get("opcode") in dialogue_opcodes for b in blocks.values())
+    if not has_dialogue_block:
+        raise check50.Failure(
+            "Project does not use say, ask, or think blocks.",
+            help="Use blocks like 'say [Hello!] for [2] seconds' or 'ask [What is your name?] and wait' to make your sprites speak."
+        )
+
+@check50.check(both_sprites_have_scripts)
+def first_sprite_asks():
+    """first sprite asks 'How old are you?'"""
+    project = scratch_helper.get_project()
     asked_question = False
+
+    for target in project.get("targets", []):
+        if not target.get("isStage"):
+            target_blocks = scratch_helper.get_target_blocks(target)
+            for b_id, b in target_blocks.items():
+                opcode = b.get("opcode", "")
+                if opcode in ("looks_say", "looks_sayforsecs", "looks_think", "looks_thinkforsecs", "sensing_askandwait"):
+                    if scratch_helper.is_connected_to_hat(b_id, target_blocks):
+                        msg = get_block_text(b, target_blocks)
+                        if msg:
+                            msg_lower = str(msg).lower()
+                            if "how old" in msg_lower:
+                                asked_question = True
+                                break
+            if asked_question:
+                break
+
+    if not asked_question:
+        raise check50.Failure(
+            "First sprite did not ask 'How old are you?'",
+            help="In the say or ask block for the first sprite, type 'How old are you?'."
+        )
+
+@check50.check(both_sprites_have_scripts)
+def second_sprite_answers():
+    """second sprite answers with age '20'"""
+    project = scratch_helper.get_project()
     answered_age = False
 
     for target in project.get("targets", []):
         if not target.get("isStage"):
             target_blocks = scratch_helper.get_target_blocks(target)
             for b_id, b in target_blocks.items():
-                if b.get("opcode") in ("looks_say", "looks_sayforsecs"):
+                opcode = b.get("opcode", "")
+                if opcode in ("looks_say", "looks_sayforsecs", "looks_think", "looks_thinkforsecs", "sensing_askandwait"):
                     if scratch_helper.is_connected_to_hat(b_id, target_blocks):
-                        msg = scratch_helper.get_block_input_value(b, "MESSAGE", target_blocks)
+                        msg = get_block_text(b, target_blocks)
                         if msg:
                             msg_lower = str(msg).lower()
-                            if "how old" in msg_lower:
-                                asked_question = True
                             if "20" in msg_lower:
                                 answered_age = True
-
-    if not asked_question:
-        raise check50.Failure(
-            "First sprite did not ask 'How old are you?'",
-            help="In the say block for the first sprite, type 'How old are you?'."
-        )
+                                break
+            if answered_age:
+                break
 
     if not answered_age:
         raise check50.Failure(
             "Second sprite did not answer with age '20'",
-            help="In the say block for the second sprite, include '20' (e.g., 'I'm 20 years old.')."
+            help="In the say or think block for the second sprite, include '20' (e.g., 'I'm 20 years old.')."
         )
