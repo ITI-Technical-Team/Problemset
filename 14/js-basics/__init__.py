@@ -237,7 +237,7 @@ console.log("PASS");
 
 @check50.check(exists)
 def has_css_classes():
-    """CSS defines .child, .teenager, and .adult classes, centers page, and sets light background"""
+    """CSS defines .child, .teenager, and .adult classes with text colors, centers page, and sets light background"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     style_tag = soup.find("style")
@@ -250,10 +250,12 @@ def has_css_classes():
     css_clean = _strip_css_comments(style_tag.string or "").lower()
 
     for category in ["child", "teenager", "adult"]:
-        if not re.search(r'\.' + category + r'\b', css_clean):
+        # Verify class selector exists and contains a valid color property (ignoring background-color or border-color)
+        pattern = r'\.' + category + r'\s*(?:[^{]*)\{\s*[^}]*(?<![-\w])color\s*:[^;}]+'
+        if not re.search(pattern, css_clean, re.IGNORECASE):
             raise check50.Failure(
-                f"Missing CSS rule for class '.{category}'",
-                help=f"Define .{category} {{ color: ...; }} inside your <style> block"
+                f"Missing or empty CSS rule for class '.{category}'",
+                help=f"Define .{category} {{ color: ...; }} inside your <style> block to color-code the result text."
             )
 
     if "text-align" not in css_clean or "center" not in css_clean:
