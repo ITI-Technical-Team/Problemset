@@ -77,3 +77,16 @@ def test_random():
     expected = "\n".join(str(len(s)) for s in strings)
     stdin_data = f"{t}\n" + "\n".join(strings)
     check50.run("./length").stdin(stdin_data, prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_string_included():
+    """string library is included in length.cpp"""
+    with open("length.cpp", "r") as f:
+        code = f.read()
+    
+    import re
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    if not re.search(r'#\s*include\s*[<"]string[>"]', code_clean):
+        raise check50.Failure("Did not find #include <string> in length.cpp.")

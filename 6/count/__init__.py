@@ -86,3 +86,16 @@ def test_random():
     c = random.choice(string.ascii_letters)
     expected = str(s.count(c))
     check50.run("./count").stdin(f"{s}\n{c}", prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_string_included():
+    """string library is included in count.cpp"""
+    with open("count.cpp", "r") as f:
+        code = f.read()
+    
+    import re
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    if not re.search(r'#\s*include\s*[<"]string[>"]', code_clean):
+        raise check50.Failure("Did not find #include <string> in count.cpp.")

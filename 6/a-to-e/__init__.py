@@ -91,3 +91,16 @@ def test_random_no():
     n = random.randint(5, 20)
     s = "".join(random.choices("abcde", k=n-1)) + "f"
     check50.run("./a-to-e").stdin(f"{n}\n{s}", prompt=False).stdout("NO", regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_string_included():
+    """string library is included in a-to-e.cpp"""
+    with open("a-to-e.cpp", "r") as f:
+        code = f.read()
+    
+    import re
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    if not re.search(r'#\s*include\s*[<"]string[>"]', code_clean):
+        raise check50.Failure("Did not find #include <string> in a-to-e.cpp.")

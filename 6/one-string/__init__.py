@@ -71,3 +71,16 @@ def test_random():
     s2 = "".join(random.choices(string.ascii_lowercase, k=10))
     expected = s1 + s2
     check50.run("./one-string").stdin(f"{s1}\n{s2}", prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_string_included():
+    """string library is included in one-string.cpp"""
+    with open("one-string.cpp", "r") as f:
+        code = f.read()
+    
+    import re
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    if not re.search(r'#\s*include\s*[<"]string[>"]', code_clean):
+        raise check50.Failure("Did not find #include <string> in one-string.cpp.")
