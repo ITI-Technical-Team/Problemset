@@ -1,0 +1,10 @@
+order_id,customer_id,amount,item
+1,1,250,Book
+2,1,400,Laptop
+3,2,150,Phone
+4,2,800,TV
+5,3,1200,Car
+6,4,300,Keyboard
+7,4,1000,Monitor
+8,5,100,Headphones
+9,6,600,Camera

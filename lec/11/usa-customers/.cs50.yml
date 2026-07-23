@@ -1,0 +1,9 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require usa-customers.sql
+    - !include CUSTOMERS.csv
+    - !include ORDERS.csv
+
+submit50:
+  files: *check50_files
