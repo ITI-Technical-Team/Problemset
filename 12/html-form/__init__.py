@@ -337,7 +337,7 @@ def has_reset_button():
 
 @check50.check(exists)
 def has_labels():
-    """form has <label> elements for its inputs"""
+    """form has <label> elements for its inputs, properly placed and linked"""
     _check_tag_closed("register.html", "label")
     html = _uncommented_html("register.html")
     soup = BeautifulSoup(html, "html.parser")
@@ -345,9 +345,39 @@ def has_labels():
     if not form:
         raise check50.Failure("Missing <form> element")
 
+    # 1. Enforce that all label elements are inside the form element
+    all_labels = soup.find_all("label")
+    for lbl in all_labels:
+        if lbl not in form.descendants:
+            raise check50.Failure(
+                f"Label '{lbl.get_text().strip()}' is placed outside the <form> element.",
+                help="Make sure all label elements are inside the <form> block."
+            )
+
+    # 2. Enforce at least 4 labels inside the form
     labels = form.find_all("label")
     if len(labels) < 4:
         raise check50.Failure(
-            f"Found {len(labels)} <label>(s), expected at least 4",
+            f"Found {len(labels)} <label>(s) inside the form, expected at least 4",
             help="Add <label> elements for First Name, Second Name, Phone, Email, Password, etc."
         )
+
+    # 3. Enforce that each label is linked to a valid input/select/textarea
+    for lbl in labels:
+        has_nested = lbl.find(["input", "select", "textarea"])
+        if has_nested:
+            continue
+            
+        for_attr = lbl.get("for")
+        if not for_attr or not for_attr.strip():
+            raise check50.Failure(
+                f"Label '{lbl.get_text().strip()}' is not linked to any input field.",
+                help="Link the label to its input field by adding a 'for' attribute to the <label> (e.g. <label for='email'>) and a matching 'id' attribute to the input (e.g. <input id='email'>), or by nesting the input inside the <label>."
+            )
+            
+        linked_input = soup.find(id=for_attr.strip())
+        if not linked_input or linked_input.name not in ("input", "select", "textarea"):
+            raise check50.Failure(
+                f"Label for='{for_attr}' does not match the id of any input field.",
+                help=f"Make sure you have an input, select, or textarea element with id='{for_attr.strip()}' to link with this label."
+            )
