@@ -204,6 +204,18 @@ def has_at_least_3_images():
                 "An <img> tag is missing the 'src' attribute",
                 help="Make sure all <img> elements specify a source file/URL using src=\"...\""
             )
+            
+        # Enforce valid image extension for all non-data URIs
+        if not src.startswith("data:"):
+            from urllib.parse import urlparse
+            path = urlparse(src).path.lower()
+            valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp")
+            if not any(path.endswith(ext) for ext in valid_exts):
+                raise check50.Failure(
+                    f"Referenced image path or URL '{src}' is not a valid image file",
+                    help="Make sure your src attribute points to a valid image file (ending with .png, .jpg, .jpeg, etc.)"
+                )
+
         # Check if remote link is broken
         if src.startswith("http://") or src.startswith("https://"):
             import urllib.request
@@ -223,16 +235,6 @@ def has_at_least_3_images():
             except Exception:
                 # Ignore connection/timeout errors to allow offline grading
                 pass
-        elif src.startswith("data:"):
-            pass
-        else:
-            # Local image: verify it has a valid image extension to ensure it is not dummy text
-            valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp")
-            if not any(src.lower().endswith(ext) for ext in valid_exts):
-                raise check50.Failure(
-                    f"Referenced image path '{src}' is not a valid image file",
-                    help="Make sure your src attribute points to a valid image file (ending with .png, .jpg, .jpeg, etc.)"
-                )
 
     # All image src values must be distinct — same image repeated does not count
     srcs = [img.get("src", "").strip() for img in imgs]
