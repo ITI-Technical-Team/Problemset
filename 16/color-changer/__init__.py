@@ -82,7 +82,7 @@ def has_heading_h1():
 
 @check50.check(exists)
 def has_style_block():
-    """index.html has a <style> block inside <head> with styles"""
+    """index.html has a <style> block inside <head> with styles and centering"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     head = soup.find("head")
@@ -105,6 +105,15 @@ def has_style_block():
         raise check50.Failure(
             "CSS <style> block is empty or contains no styling properties",
             help="Define some actual style rules (e.g. body { background-color: lightgray; }) inside the `<style>` block"
+        )
+
+    css_clean_lower = css_clean.lower()
+    has_text_center = "text-align" in css_clean_lower and "center" in css_clean_lower
+    has_margin_auto = "margin" in css_clean_lower and "auto" in css_clean_lower
+    if not (has_text_center or has_margin_auto):
+        raise check50.Failure(
+            "Page content is not centered in CSS",
+            help="Make sure you use 'text-align: center;' or 'margin: auto;' in your CSS rules to center the page elements."
         )
 
 
@@ -141,13 +150,21 @@ def has_button():
             help="Label your button as 'New Quote': <button onclick=\"RandomQuotes()\">New Quote</button>"
         )
          
-    onclick = btn.get("onclick", "")
+    onclick = (btn.get("onclick") or "").strip()
     # Check if click listener is defined in HTML or script
-    if not onclick and "addeventlistener" not in html.lower():
-         raise check50.Failure(
-            "Button does not trigger RandomQuotes() on click",
-            help="Add onclick=\"RandomQuotes()\" to your button or use addEventListener in JavaScript"
-        )
+    if not onclick:
+        if "addeventlistener" not in html.lower():
+             raise check50.Failure(
+                "Button does not trigger RandomQuotes() on click",
+                help="Add onclick=\"RandomQuotes()\" to your button or use addEventListener in JavaScript"
+             )
+    else:
+        # Enforce that onclick contains a valid call to RandomQuotes()
+        if not re.search(r'randomquotes\s*\(\s*\)', onclick, re.IGNORECASE):
+            raise check50.Failure(
+                f"Button onclick handler is invalid: '{onclick}'",
+                help="Make sure to call the function with parentheses, e.g. onclick=\"RandomQuotes()\""
+            )
 
 
 # ─── JS checks — functional execution ────────────────────────────────────────
@@ -293,7 +310,7 @@ for (const tc of test_cases) {
 console.log("PASS");
 """
 
-    full_js = mock_env + js_code + test_harness
+    full_js = '"use strict";\n' + mock_env + js_code + test_harness
 
     try:
         res = subprocess.run(["node", "-e", full_js], capture_output=True, text=True)
