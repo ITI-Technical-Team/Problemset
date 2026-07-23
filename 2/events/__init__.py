@@ -76,12 +76,15 @@ def then_branch_move_and_wait():
     blocks = scratch_helper.get_blocks(project)
 
     valid_then = False
+    move_first = True
 
     for b_id, b in blocks.items():
         if b.get("opcode") == "control_if_else":
             if scratch_helper.is_connected_to_hat(b_id, blocks):
                 has_move_1 = False
                 has_wait_1 = False
+                move_idx = -1
+                wait_idx = -1
 
                 inputs = b.get("inputs", {})
                 if "SUBSTACK" in inputs:
@@ -89,6 +92,7 @@ def then_branch_move_and_wait():
                     if sub_first and sub_first in blocks:
                         curr = sub_first
                         visited = set()
+                        idx = 0
                         while curr and curr in blocks and curr not in visited:
                             visited.add(curr)
                             cb = blocks[curr]
@@ -97,17 +101,28 @@ def then_branch_move_and_wait():
                                 steps = scratch_helper.get_block_input_value(cb, "STEPS", blocks)
                                 if steps and str(steps).strip() == "1":
                                     has_move_1 = True
+                                    move_idx = idx
                             if op == "control_wait":
                                 dur = scratch_helper.get_block_input_value(cb, "DURATION", blocks)
                                 if dur and str(dur).strip() == "1":
                                     has_wait_1 = True
+                                    wait_idx = idx
+                            idx += 1
                             curr = cb.get("next")
 
                 if has_move_1 and has_wait_1:
-                    valid_then = True
-                    break
+                    if move_idx < wait_idx:
+                        valid_then = True
+                        break
+                    else:
+                        move_first = False
 
     if not valid_then:
+        if not move_first:
+            raise check50.Failure(
+                "Then branch has incorrect block order.",
+                help="Move 1 steps must come before wait 1 seconds, not the opposite."
+            )
         raise check50.Failure(
             "Then branch is missing 'move 1 steps' or 'wait 1 seconds'.",
             help="Inside the top ('then') section of your if-else block, add: (1) 'move 1 steps', and (2) 'wait 1 seconds'."
@@ -120,12 +135,15 @@ def else_branch_sound_and_wait():
     blocks = scratch_helper.get_blocks(project)
 
     valid_else = False
+    sound_first = True
 
     for b_id, b in blocks.items():
         if b.get("opcode") == "control_if_else":
             if scratch_helper.is_connected_to_hat(b_id, blocks):
                 has_sound = False
                 has_wait_2 = False
+                sound_idx = -1
+                wait_idx = -1
 
                 inputs = b.get("inputs", {})
                 if "SUBSTACK2" in inputs:
@@ -133,23 +151,35 @@ def else_branch_sound_and_wait():
                     if sub_first and sub_first in blocks:
                         curr = sub_first
                         visited = set()
+                        idx = 0
                         while curr and curr in blocks and curr not in visited:
                             visited.add(curr)
                             cb = blocks[curr]
                             op = cb.get("opcode", "")
                             if op in ("sound_play", "sound_playuntildone"):
                                 has_sound = True
+                                sound_idx = idx
                             if op == "control_wait":
                                 dur = scratch_helper.get_block_input_value(cb, "DURATION", blocks)
                                 if dur and str(dur).strip() == "2":
                                     has_wait_2 = True
+                                    wait_idx = idx
+                            idx += 1
                             curr = cb.get("next")
 
                 if has_sound and has_wait_2:
-                    valid_else = True
-                    break
+                    if sound_idx < wait_idx:
+                        valid_else = True
+                        break
+                    else:
+                        sound_first = False
 
     if not valid_else:
+        if not sound_first:
+            raise check50.Failure(
+                "Else branch has incorrect block order.",
+                help="Play sound must come before wait 2 seconds, not the opposite."
+            )
         raise check50.Failure(
             "Else branch is missing sound or 'wait 2 seconds'.",
             help="Inside the bottom ('else') section of your if-else block, add: (1) a sound block, and (2) 'wait 2 seconds'."
