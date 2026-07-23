@@ -39,16 +39,27 @@ def is_input_variable(block, input_name, blocks):
     if input_name not in inputs:
         return False
     val = inputs[input_name]
-    if isinstance(val, list) and len(val) > 1:
-        if val[0] == 12:
-            return True
-        if val[0] == 3:
-            ref_id = val[1]
-            if isinstance(ref_id, str):
-                if ref_id in blocks:
-                    return blocks[ref_id].get("opcode") == "data_variable"
-                if "var" in ref_id.lower():
-                    return True
+    if not isinstance(val, list) or len(val) < 2:
+        return False
+        
+    # Case 1: Direct variable representation [12, "var_name", "var_id"]
+    if val[0] == 12:
+        return True
+        
+    # Case 2: Nested variable inside type 3: [3, [12, "var_name", "var_id"], [10, "default"]]
+    if val[0] == 3 and isinstance(val[1], list) and len(val[1]) > 0 and val[1][0] == 12:
+        return True
+        
+    # Case 3: Block reference [2, "block_id"] or [3, "block_id", ...]
+    if val[0] in (2, 3):
+        ref_id = val[1]
+        if isinstance(ref_id, str):
+            if ref_id in blocks:
+                return blocks[ref_id].get("opcode") == "data_variable"
+            # Fallback for dummy/corrupted files containing "var" in the ID
+            if "var" in ref_id.lower():
+                return True
+                
     return False
 
 @check50.check(valid_sb3)
