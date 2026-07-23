@@ -141,12 +141,24 @@ def check_loop(blocks):
                 return True
     return False
 
+def block_has_condition(block, blocks):
+    """Checks if a conditional block has a valid condition block attached to its CONDITION input."""
+    inputs = block.get("inputs", {})
+    if "CONDITION" not in inputs:
+        return False
+    cond_val = inputs["CONDITION"]
+    if isinstance(cond_val, list) and len(cond_val) > 1:
+        cond_id = cond_val[1]
+        if cond_id and isinstance(cond_id, str) and cond_id in blocks:
+            return True
+    return False
+
 def check_conditional(blocks):
-    """Checks if a conditional exists that is connected to a hat block."""
+    """Checks if a conditional exists that is connected to a hat block AND has a condition block."""
     conditional_opcodes = ["control_if", "control_if_else"]
     for block_id, block in blocks.items():
         if block.get("opcode") in conditional_opcodes:
-            if is_connected_to_hat(block_id, blocks):
+            if is_connected_to_hat(block_id, blocks) and block_has_condition(block, blocks):
                 return True
     return False
 
@@ -160,11 +172,11 @@ def check_active_loop(blocks):
     return False
 
 def check_active_conditional(blocks):
-    """Checks if a conditional exists that is connected to a hat block AND has blocks inside it."""
+    """Checks if a conditional exists that is connected to a hat block AND has blocks inside it AND has a condition block."""
     conditional_opcodes = ["control_if", "control_if_else"]
     for block_id, block in blocks.items():
         if block.get("opcode") in conditional_opcodes:
-            if is_connected_to_hat(block_id, blocks) and block_has_substack(block, blocks):
+            if is_connected_to_hat(block_id, blocks) and block_has_substack(block, blocks) and block_has_condition(block, blocks):
                 return True
     return False
 
@@ -178,11 +190,11 @@ def check_active_loop_in_custom_block(blocks):
     return False
 
 def check_active_conditional_in_custom_block(blocks):
-    """Checks if a non-empty conditional exists INSIDE a custom block definition."""
+    """Checks if a non-empty conditional exists INSIDE a custom block definition AND has a condition block."""
     conditional_opcodes = ["control_if", "control_if_else"]
     for block_id, block in blocks.items():
         if block.get("opcode") in conditional_opcodes:
-            if is_inside_custom_block(block_id, blocks) and block_has_substack(block, blocks):
+            if is_inside_custom_block(block_id, blocks) and block_has_substack(block, blocks) and block_has_condition(block, blocks):
                 return True
     return False
 
