@@ -1,0 +1,8 @@
+check50:
+  files: &check50_files
+    - !exclude "*"
+    - !require csv-dictreader.py
+    - !include favorites.csv
+
+submit50:
+  files: *check50_files
