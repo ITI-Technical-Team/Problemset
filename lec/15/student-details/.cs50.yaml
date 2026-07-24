@@ -1,0 +1,8 @@
+check50:
+  checks: __init__.py
+  files: &check50_files
+    - !exclude "*"
+    - !require student-details.js
+
+submit50:
+  files: *check50_files
