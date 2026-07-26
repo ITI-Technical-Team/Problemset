@@ -79,40 +79,46 @@ def valid_sql_syntax():
 
 @check50.check(valid_sql_syntax)
 def test_sql_clauses():
-    """query uses JOIN and WHERE clauses"""
+    """query uses JOIN ... ON and WHERE clauses"""
     sql = open("city-africa.sql").read().upper()
-    if "JOIN" not in sql and "WHERE" not in sql:
+    if "JOIN" not in sql or ("ON" not in sql and "=" not in sql) or "WHERE" not in sql:
         raise check50.Failure(
-            "Query does not use JOIN or WHERE clause",
-            help="Join CITY and COUNTRY tables and filter WHERE COUNTRY.Continent = 'Africa'"
+            "Query does not use JOIN ... ON or WHERE clause",
+            help="Join CITY and COUNTRY tables using ON CITY.CountryCode = COUNTRY.Code and filter WHERE COUNTRY.Continent = 'Africa'"
         )
 
 
 @check50.check(valid_sql_syntax)
-def test_cairo_in_results():
-    """query results include 'Cairo'"""
+def test_exact_african_cities():
+    """query returns all African cities and NO non-African cities"""
     rows = run_sql_file("cities.db", "city-africa.sql")
-    names = [str(r[0]).strip() for r in rows]
-    if "Cairo" not in names:
+    names = set(str(r[0]).strip() for r in rows if r and r[0])
+
+    conn = sqlite3.connect("cities.db")
+    cur = conn.execute("""
+        SELECT CITY.NAME FROM CITY
+        JOIN COUNTRY ON CITY.COUNTRYCODE = COUNTRY.CODE
+        WHERE COUNTRY.CONTINENT = 'Africa'
+    """)
+    expected = set(r[0].strip() for r in cur.fetchall())
+    conn.close()
+
+    missing = expected - names
+    unexpected = names - expected
+
+    if unexpected:
         raise check50.Failure(
-            "Expected 'Cairo' in results (it is a city in Africa)",
-            help="Check your JOIN condition: CITY.CountryCode = COUNTRY.Code"
+            f"Query returned non-African cities or unjoined rows (e.g. {list(unexpected)[:3]})",
+            help="Make sure you specify a JOIN condition using ON CITY.CountryCode = COUNTRY.Code to avoid a Cartesian product"
+        )
+    if missing:
+        raise check50.Failure(
+            f"Query is missing African cities (e.g. {list(missing)[:3]})",
+            help="Make sure your query selects all cities where COUNTRY.Continent = 'Africa'"
         )
 
 
-@check50.check(valid_sql_syntax)
-def test_nairobi_in_results():
-    """query results include 'Nairobi'"""
-    rows = run_sql_file("cities.db", "city-africa.sql")
-    names = [str(r[0]).strip() for r in rows]
-    if "Nairobi" not in names:
-        raise check50.Failure(
-            "Expected 'Nairobi' in results (it is a city in Africa)",
-            help="Make sure you filter WHERE COUNTRY.Continent = 'Africa'"
-        )
-
-
-@check50.check(test_cairo_in_results)
+@check50.check(test_exact_african_cities)
 def test_dynamic_db():
     """query reflects dynamic database updates"""
     conn = sqlite3.connect("cities.db")

@@ -78,17 +78,35 @@ def test_sql_clauses():
 
 
 @check50.check(valid_sql_syntax)
+def test_all_vowels_checked():
+    """query checks for all 5 vowels (A, E, I, O, U)"""
+    sql = open("no-vowel-city.sql").read().upper()
+    missing_vowels = [v for v in ["A", "E", "I", "O", "U"] if v not in sql]
+    if missing_vowels:
+        raise check50.Failure(
+            f"Query is missing checks for vowel(s): {', '.join(missing_vowels)}",
+            help="Make sure to exclude cities starting or ending with ALL 5 vowels (A, E, I, O, U)"
+        )
+
+
+@check50.check(valid_sql_syntax)
 def test_correct_no_vowel_cities():
     """query returns exact list of cities that do not start and do not end with a vowel"""
-    rows = run_sql_file("station.db", "no-vowel-city.sql")
-    names = set(str(r[0]).strip() for r in rows if r and r[0])
-
-    vowels = set("AEIOUaeiou")
+    # Dynamically insert U-starting, U-ending, and valid middle-vowel test cities into station.db
     conn = sqlite3.connect("station.db")
+    conn.execute("INSERT INTO STATION VALUES (9991, 'UrbanaTest', 'IL', 10, 10)")
+    conn.execute("INSERT INTO STATION VALUES (9992, 'BakuTestu', 'AZ', 10, 10)")
+    conn.execute("INSERT INTO STATION VALUES (9993, 'Dallas', 'TX', 10, 10)")
+    conn.commit()
+
     cur = conn.execute("SELECT DISTINCT CITY FROM STATION")
     all_cities = [r[0] for r in cur.fetchall()]
     conn.close()
 
+    rows = run_sql_file("station.db", "no-vowel-city.sql")
+    names = set(str(r[0]).strip() for r in rows if r and r[0])
+
+    vowels = set("AEIOUaeiou")
     expected = set(c.strip() for c in all_cities if c and c[0] not in vowels and c[-1] not in vowels)
 
     missing = expected - names
@@ -97,12 +115,12 @@ def test_correct_no_vowel_cities():
     if missing:
         raise check50.Failure(
             f"Query is missing valid cities that do not start and do not end with a vowel: {list(missing)[:3]}",
-            help="Use NOT LIKE 'A%' AND NOT LIKE 'E%' ... for start, AND NOT LIKE '%A' AND NOT LIKE '%E' ... for end. Do NOT use NOT LIKE '%A%' which incorrectly removes cities with vowels in the middle!"
+            help="Use NOT LIKE 'A%' AND NOT LIKE 'E%' ... for start, AND NOT LIKE '%A' AND NOT LIKE '%E' ... for end."
         )
     if unexpected:
         raise check50.Failure(
             f"Query returned cities that start or end with a vowel: {list(unexpected)[:3]}",
-            help="Make sure your query filters for cities that do NOT start AND do NOT end with a vowel"
+            help="Make sure your query filters out cities starting OR ending with any vowel (A, E, I, O, U)"
         )
 
 
