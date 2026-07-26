@@ -5,7 +5,7 @@ import os
 
 
 def setup_db():
-    """Create station.db from included STATION CSV file."""
+    """Create station.db from included STATION CSV file and dynamic test cases."""
     check50.include("STATION.csv")
     conn = sqlite3.connect("station.db")
     conn.execute("DROP TABLE IF EXISTS STATION")
@@ -20,6 +20,17 @@ def setup_db():
             "INSERT INTO STATION VALUES (?,?,?,?,?)",
             data + data
         )
+
+    # Inject test cities for ALL 5 vowels (A, E, I, O, U) at start and end
+    # to catch any missing/commented-out vowel condition
+    test_rows = [
+        (9901, 'A_TestCity_a', 'TX', 10, 10),
+        (9902, 'E_TestCity_e', 'TX', 10, 10),
+        (9903, 'I_TestCity_i', 'TX', 10, 10),
+        (9904, 'O_TestCity_o', 'TX', 10, 10),
+        (9905, 'U_TestCity_u', 'TX', 10, 10),
+    ]
+    conn.executemany("INSERT INTO STATION VALUES (?,?,?,?,?)", test_rows)
     conn.commit()
     conn.close()
 
