@@ -78,28 +78,31 @@ def test_sql_clauses():
 
 
 @check50.check(valid_sql_syntax)
-def test_no_vowel_start():
-    """results have no city starting with a vowel"""
+def test_correct_no_vowel_cities():
+    """query returns exact list of cities that do not start and do not end with a vowel"""
     rows = run_sql_file("station.db", "no-vowel-city.sql")
+    names = set(str(r[0]).strip() for r in rows if r and r[0])
+
     vowels = set("AEIOUaeiou")
-    bad = [str(r[0]) for r in rows if str(r[0]) and str(r[0])[0] in vowels]
-    if bad:
+    conn = sqlite3.connect("station.db")
+    cur = conn.execute("SELECT DISTINCT CITY FROM STATION")
+    all_cities = [r[0] for r in cur.fetchall()]
+    conn.close()
+
+    expected = set(c.strip() for c in all_cities if c and c[0] not in vowels and c[-1] not in vowels)
+
+    missing = expected - names
+    unexpected = names - expected
+
+    if missing:
         raise check50.Failure(
-            f"Results contain cities starting with a vowel: {bad[:3]}",
-            help="Use NOT LIKE 'A%' AND NOT LIKE 'E%' ... for all 5 vowels"
+            f"Query is missing valid cities that do not start and do not end with a vowel: {list(missing)[:3]}",
+            help="Use NOT LIKE 'A%' AND NOT LIKE 'E%' ... for start, AND NOT LIKE '%A' AND NOT LIKE '%E' ... for end. Do NOT use NOT LIKE '%A%' which incorrectly removes cities with vowels in the middle!"
         )
-
-
-@check50.check(valid_sql_syntax)
-def test_no_vowel_end():
-    """results have no city ending with a vowel"""
-    rows = run_sql_file("station.db", "no-vowel-city.sql")
-    vowels = set("AEIOUaeiou")
-    bad = [str(r[0]) for r in rows if str(r[0]) and str(r[0])[-1] in vowels]
-    if bad:
+    if unexpected:
         raise check50.Failure(
-            f"Results contain cities ending with a vowel: {bad[:3]}",
-            help="Use NOT LIKE '%a' AND NOT LIKE '%e' ... for all 5 vowels"
+            f"Query returned cities that start or end with a vowel: {list(unexpected)[:3]}",
+            help="Make sure your query filters for cities that do NOT start AND do NOT end with a vowel"
         )
 
 
@@ -117,7 +120,7 @@ def test_no_duplicates():
         )
 
 
-@check50.check(test_no_vowel_start)
+@check50.check(test_correct_no_vowel_cities)
 def test_dynamic_db():
     """query reflects dynamic database updates"""
     conn = sqlite3.connect("station.db")

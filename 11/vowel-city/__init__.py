@@ -78,28 +78,31 @@ def test_sql_clauses():
 
 
 @check50.check(valid_sql_syntax)
-def test_vowel_start():
-    """all results start with a vowel"""
+def test_correct_vowel_cities():
+    """query returns exact list of cities starting and ending with a vowel"""
     rows = run_sql_file("station.db", "vowel-city.sql")
+    names = set(str(r[0]).strip() for r in rows if r and r[0])
+
     vowels = set("AEIOUaeiou")
-    bad = [str(r[0]) for r in rows if str(r[0]) and str(r[0])[0] not in vowels]
-    if bad:
+    conn = sqlite3.connect("station.db")
+    cur = conn.execute("SELECT DISTINCT CITY FROM STATION")
+    all_cities = [r[0] for r in cur.fetchall()]
+    conn.close()
+
+    expected = set(c.strip() for c in all_cities if c and c[0] in vowels and c[-1] in vowels)
+
+    missing = expected - names
+    unexpected = names - expected
+
+    if missing:
         raise check50.Failure(
-            f"Results contain cities NOT starting with a vowel: {bad[:3]}",
-            help="Use LIKE 'A%' OR LIKE 'E%' ... for all 5 vowels at the start"
+            f"Query is missing valid cities starting and ending with vowels: {list(missing)[:3]}",
+            help="Ensure you use OR between vowel patterns for start AND OR between vowel patterns for end: (CITY LIKE 'A%' OR CITY LIKE 'E%' ...) AND (CITY LIKE '%A' OR CITY LIKE '%E' ...)"
         )
-
-
-@check50.check(valid_sql_syntax)
-def test_vowel_end():
-    """all results end with a vowel"""
-    rows = run_sql_file("station.db", "vowel-city.sql")
-    vowels = set("AEIOUaeiou")
-    bad = [str(r[0]) for r in rows if str(r[0]) and str(r[0])[-1] not in vowels]
-    if bad:
+    if unexpected:
         raise check50.Failure(
-            f"Results contain cities NOT ending with a vowel: {bad[:3]}",
-            help="Use LIKE '%a' OR LIKE '%e' ... for all 5 vowels at the end"
+            f"Query returned cities that do not both start and end with a vowel: {list(unexpected)[:3]}",
+            help="Make sure your query filters for cities that start AND end with a vowel (A, E, I, O, U)"
         )
 
 
@@ -117,7 +120,7 @@ def test_no_duplicates():
         )
 
 
-@check50.check(test_vowel_start)
+@check50.check(test_correct_vowel_cities)
 def test_dynamic_db():
     """query reflects dynamic database updates"""
     conn = sqlite3.connect("station.db")
