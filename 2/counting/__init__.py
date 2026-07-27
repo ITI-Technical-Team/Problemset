@@ -63,6 +63,46 @@ def is_input_variable(block, input_name, blocks):
     return False
 
 @check50.check(valid_sb3)
+def set_is_outside_loop():
+    """variable is initialized BEFORE the repeat loop, not inside it"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
+
+    loop_opcodes = {"control_repeat", "control_repeat_until", "control_forever"}
+
+    def get_blocks_inside(container_id):
+        inside = set()
+        container = blocks.get(container_id)
+        if not container:
+            return inside
+        for key in ("SUBSTACK", "SUBSTACK2"):
+            inp = container.get("inputs", {}).get(key)
+            if not inp:
+                continue
+            curr = inp[1] if isinstance(inp[1], str) else None
+            visited = set()
+            while curr and curr in blocks and curr not in visited:
+                visited.add(curr)
+                inside.add(curr)
+                cb = blocks[curr]
+                for nested_key in ("SUBSTACK", "SUBSTACK2"):
+                    nested_inp = cb.get("inputs", {}).get(nested_key)
+                    if nested_inp and isinstance(nested_inp[1], str):
+                        inside |= get_blocks_inside(curr)
+                curr = cb.get("next")
+        return inside
+
+    for b_id, b in blocks.items():
+        if b.get("opcode") in loop_opcodes:
+            if scratch_helper.is_connected_to_hat(b_id, blocks):
+                for inner_id in get_blocks_inside(b_id):
+                    if blocks.get(inner_id, {}).get("opcode") == "data_setvariableto":
+                        raise check50.Failure(
+                            "Variable initialization (set block) is inside the repeat loop.",
+                            help="Move the 'set [variable] to [2]' block to before the repeat loop. If it is inside, the variable resets every iteration and the sprite will say the same number each time."
+                        )
+
+@check50.check(valid_sb3)
 def has_variable_initialization():
     """project initializes a variable"""
     project = scratch_helper.get_project()
