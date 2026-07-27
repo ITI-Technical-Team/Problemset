@@ -63,50 +63,6 @@ def is_input_variable(block, input_name, blocks):
     return False
 
 @check50.check(valid_sb3)
-def set_is_outside_loop():
-    """variable is initialized BEFORE (outside) the repeat loop, not inside it"""
-    project = scratch_helper.get_project()
-    blocks = scratch_helper.get_blocks(project)
-
-    loop_opcodes = {"control_repeat", "control_repeat_until", "control_forever"}
-
-    def get_all_inside_block_ids(container_block_id):
-        """Walk all blocks nested inside a container block (loop/conditional)."""
-        inside = set()
-        container = blocks.get(container_block_id)
-        if not container:
-            return inside
-        for key in ("SUBSTACK", "SUBSTACK2"):
-            inp = container.get("inputs", {}).get(key)
-            if not inp:
-                continue
-            curr = inp[1] if isinstance(inp[1], str) else None
-            visited = set()
-            while curr and curr in blocks and curr not in visited:
-                visited.add(curr)
-                inside.add(curr)
-                cb = blocks[curr]
-                # Recurse into nested loops/conditionals
-                for nested_key in ("SUBSTACK", "SUBSTACK2"):
-                    nested_inp = cb.get("inputs", {}).get(nested_key)
-                    if nested_inp and isinstance(nested_inp[1], str):
-                        inside |= get_all_inside_block_ids(curr)
-                curr = cb.get("next")
-        return inside
-
-    for b_id, b in blocks.items():
-        if b.get("opcode") in loop_opcodes:
-            if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inside_ids = get_all_inside_block_ids(b_id)
-                for inner_id in inside_ids:
-                    inner_block = blocks.get(inner_id, {})
-                    if inner_block.get("opcode") == "data_setvariableto":
-                        raise check50.Failure(
-                            "Variable initialization (set block) is inside the repeat loop.",
-                            help="Move the 'set [variable] to [2]' block to BEFORE the repeat loop. If it's inside, the variable resets to 2 on every iteration and the sprite will say 2 fifty times instead of counting up."
-                        )
-
-@check50.check(valid_sb3)
 def has_variable_initialization():
     """project initializes a variable"""
     project = scratch_helper.get_project()
