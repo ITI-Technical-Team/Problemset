@@ -17,7 +17,9 @@ class RobustRun(check50.run):
         if output is not None and not kwargs.get("regex", True):
             expected_str = str(output)
             out = super().stdout(output=None)
-            if out.split() != expected_str.split():
+            import re
+            clean_out = re.sub(r'(?i)\b[xyab]\s*=\s*', '', out)
+            if clean_out.split() != expected_str.split():
                 raise check50.Mismatch(expected_str, out)
             return self
         return super().stdout(output, *args, **kwargs)

@@ -58,7 +58,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """custom function is defined in min-function.cpp"""
+    """custom function is defined and called in min-function.cpp"""
     import re
     with open("min-function.cpp", "r") as f:
         code = f.read()
@@ -73,3 +73,15 @@ def test_function_defined():
     custom_functions = [name for _, name in matches if name != "main"]
     if not custom_functions:
         raise check50.Failure("Could not find a custom function defined (other than main) as required by the problem description.")
+
+    # Verify custom function is called in main
+    main_match = re.search(r'\bint\s+main\s*\([^)]*\)\s*\{(.*)\}', code_clean, flags=re.DOTALL)
+    if main_match:
+        main_body = main_match.group(1)
+        # Match function call like fn_name(...) but not std::min if custom name isn't std::min
+        called = any(re.search(rf'\b{re.escape(fn)}\s*\(', main_body) for fn in custom_functions)
+        if not called:
+            raise check50.Failure(
+                f"Custom function '{custom_functions[0]}' is defined, but never called in main().",
+                help=f"Make sure you call '{custom_functions[0]}(...)' inside main() instead of using built-in std::min."
+            )
