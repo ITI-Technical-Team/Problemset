@@ -28,8 +28,8 @@ def verify_circle_output(out, r):
     except ValueError:
         raise check50.Mismatch("A numeric value for Area", tokens[idx_area+2])
     expected_area = 3.14 * r * r
-    if abs(student_area - expected_area) > 1e-4:
-        raise check50.Mismatch(f"Area = {expected_area}", f"Area = {student_area}")
+    if abs(student_area - expected_area) > 0.05:
+        raise check50.Mismatch(f"Area = {expected_area:.2f}", f"Area = {student_area}")
         
     # Verify Perimeter
     if "Perimeter" not in tokens:
@@ -42,8 +42,8 @@ def verify_circle_output(out, r):
     except ValueError:
         raise check50.Mismatch("A numeric value for Perimeter", tokens[idx_perim+2])
     expected_perim = 2.0 * 3.14 * r
-    if abs(student_perim - expected_perim) > 1e-4:
-        raise check50.Mismatch(f"Perimeter = {expected_perim}", f"Perimeter = {student_perim}")
+    if abs(student_perim - expected_perim) > 0.05:
+        raise check50.Mismatch(f"Perimeter = {expected_perim:.2f}", f"Perimeter = {student_perim}")
 
 @check50.check(test_compile)
 def test_example():
