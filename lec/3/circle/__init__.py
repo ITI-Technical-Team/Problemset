@@ -60,6 +60,6 @@ def test_larger():
 @check50.check(test_compile)
 def test_random():
     """handles random double inputs correctly"""
-    r = random.uniform(1.0, 50.0)
+    r = round(random.uniform(1.0, 50.0), 2)
     out = check50.run("./circle").stdin(f"{r:.2f}", prompt=False).stdout()
     verify_circle_output(out, r)
