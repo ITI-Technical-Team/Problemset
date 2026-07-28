@@ -18,7 +18,14 @@ class RobustRun(check50.run):
             expected_str = str(output)
             out = super().stdout(output=None)
             import re
-            clean_out = re.sub(r'(?i)\b[xyab]\s*=\s*', '', out)
+
+            # Strictly enforce prompts X = and Y =
+            if not re.search(r'(?i)\bx\s*=', out):
+                raise check50.Mismatch("Output containing prompt 'X = '", out)
+            if not re.search(r'(?i)\by\s*=', out):
+                raise check50.Mismatch("Output containing prompt 'Y = '", out)
+
+            clean_out = re.sub(r'(?i)\b[xy]\s*=\s*', '', out)
             if clean_out.split() != expected_str.split():
                 raise check50.Mismatch(expected_str, out)
             return self
