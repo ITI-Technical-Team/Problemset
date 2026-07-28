@@ -15,6 +15,10 @@ def test_compile():
         raise check50.Failure(_res.stderr or _res.stdout)
 
 def verify_circle_output(out, r):
+    import re
+    if not re.search(r'(?i)\bradius\s*=', out):
+        raise check50.Mismatch("Output containing prompt 'Radius = '", out)
+
     tokens = out.split()
     
     # Verify Area
