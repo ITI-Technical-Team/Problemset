@@ -65,3 +65,12 @@ def test_random():
     age = random.randint(1, 100)
     expected = f"Hello {name}, you are {age} years old."
     check50.run("./hello").stdin(f"{name} {age}", prompt=False).stdout(expected, regex=False).exit(0)
+
+@check50.check(test_compile)
+def test_includes_string():
+    """hello.cpp includes <string> header"""
+    import re
+    with open("hello.cpp", "r") as f:
+        code = f.read()
+    if not re.search(r'#include\s*<string>', code):
+        raise check50.Failure("Missing #include <string>", help="Make sure to write '#include <string>' at the top of hello.cpp when using string variables.")
