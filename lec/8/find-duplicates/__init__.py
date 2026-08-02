@@ -78,7 +78,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """findDuplicates function is defined in find-duplicates.cpp"""
+    """findDuplicates function is defined in find-duplicates.cpp and loop bounds are safe"""
     with open("find-duplicates.cpp", "r") as f:
         code = f.read()
     
@@ -90,3 +90,13 @@ def test_function_defined():
             "Could not find function 'void findDuplicates(int arr[], int n)' defined.",
             help="Define the function with the signature: void findDuplicates(int arr[], int n) to modularize your logic."
         )
+
+    # Check for out of bounds loop condition where student goes up to n (inclusive)
+    match_func = re.search(r'\bvoid\s+findDuplicates\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
+    if match_func:
+        func_body = match_func.group(0)
+        if re.search(r'<=\s*(?:n|size)\b', func_body):
+            raise check50.Failure(
+                "Out of bounds array access detected in loop condition.",
+                help="Make sure your loop condition uses '< n' (or '< size') instead of '<=' to avoid out-of-bounds access."
+            )

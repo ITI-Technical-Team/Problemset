@@ -82,7 +82,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """insertionSortSwaps function is defined in insertion-sort-swaps.cpp"""
+    """insertionSortSwaps function is defined in insertion-sort-swaps.cpp and loop bounds are safe"""
     with open("insertion-sort-swaps.cpp", "r") as f:
         code = f.read()
     
@@ -94,3 +94,13 @@ def test_function_defined():
             "Could not find function 'int insertionSortSwaps(int arr[], int n)' defined.",
             help="Define the function with the signature: int insertionSortSwaps(int arr[], int n) as shown in the slide."
         )
+
+    # Check for out of bounds loop condition where student goes up to n (inclusive)
+    match_func = re.search(r'\bint\s+insertionSortSwaps\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
+    if match_func:
+        func_body = match_func.group(0)
+        if re.search(r'<=\s*(?:n|size)\b', func_body):
+            raise check50.Failure(
+                "Out of bounds array access detected in loop condition.",
+                help="Make sure your outer loop condition is 'i < n' (or 'i < size') instead of '<=' to avoid out-of-bounds access."
+            )

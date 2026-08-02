@@ -69,7 +69,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """FindLargetAndSmallest or FindLargestAndSmallest function is defined"""
+    """FindLargetAndSmallest or FindLargestAndSmallest function is defined and loop bounds are safe"""
     with open("largest-smallest.cpp", "r") as f:
         code = f.read()
     
@@ -82,3 +82,13 @@ def test_function_defined():
             "Could not find function 'void FindLargetAndSmallest(int arr[], int n)' defined.",
             help="Define the function with the signature: void FindLargetAndSmallest(int arr[], int n) as shown in the slide."
         )
+
+    # Check for out of bounds loop condition where student goes up to n (inclusive)
+    match_func = re.search(r'\bvoid\s+FindLarge?tAndSmallest\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
+    if match_func:
+        func_body = match_func.group(0)
+        if re.search(r'<=\s*(?:n|size)\b', func_body):
+            raise check50.Failure(
+                "Out of bounds array access detected in loop condition.",
+                help="Make sure your loop condition uses '< n' (or '< size') instead of '<=' to avoid out-of-bounds access."
+            )
