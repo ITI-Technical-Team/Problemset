@@ -55,14 +55,34 @@ def test_censoring():
 
 
 @check50.check(test_compile)
+def test_censoring_at_start():
+    """replaces occurrence of 'I' at index 0 in 'I love bad food'"""
+    run = check50.run("./censor-word").stdin("I love bad food", prompt=False).stdin("I", prompt=False).stdin("We", prompt=False)
+    
+    expected = (
+        "Enter text: "
+        "Enter target: "
+        "Enter replacement: "
+        "Result: We love bad food"
+    )
+    run.stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
 def test_method_usage():
-    """verifies that .find() and .replace() methods are used"""
+    """verifies that .find() and .replace() methods are used, and <string> header is included"""
     with open("censor-word.cpp", "r") as f:
         code = f.read()
     
     # Remove comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+
+    if not re.search(r'#include\s*<\s*string\s*>', code_clean):
+        raise check50.Failure(
+            "Missing #include <string>",
+            help="Make sure to write '#include <string>' at the top of censor-word.cpp when using std::string."
+        )
     
     if ".find" not in code_clean:
         raise check50.Failure(

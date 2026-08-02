@@ -67,14 +67,33 @@ def test_not_found():
 
 
 @check50.check(test_compile)
+def test_found_at_start():
+    """finds occurrence of 'Hello' at index 0 in 'Hello world'"""
+    run = check50.run("./word-search").stdin("Hello world", prompt=False).stdin("Hello", prompt=False)
+    
+    expected = (
+        "Enter text: "
+        "Enter word: "
+        "Index: 0"
+    )
+    run.stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
 def test_method_usage():
-    """verifies that .find() method is used"""
+    """verifies that .find() method is used and <string> header is included"""
     with open("word-search.cpp", "r") as f:
         code = f.read()
     
     # Remove comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+
+    if not re.search(r'#include\s*<\s*string\s*>', code_clean):
+        raise check50.Failure(
+            "Missing #include <string>",
+            help="Make sure to write '#include <string>' at the top of word-search.cpp when using std::string."
+        )
     
     if ".find" not in code_clean:
         raise check50.Failure(
