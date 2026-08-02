@@ -79,7 +79,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """isSorted function is defined in is-sorted.cpp"""
+    """isSorted function is defined in is-sorted.cpp and loop bounds are safe"""
     with open("is-sorted.cpp", "r") as f:
         code = f.read()
     
@@ -90,4 +90,11 @@ def test_function_defined():
         raise check50.Failure(
             "Could not find function 'bool isSorted(int arr[], int n)' defined.",
             help="Define the function with the signature: bool isSorted(int arr[], int n) as shown in the slide."
+        )
+
+    # Check for out of bounds loop condition where student goes up to n or n-1 (inclusive) while checking i+1
+    if re.search(r'(?:i\s*<\s*(?:n|size)\b|i\s*<=\s*(?:n|size)\s*-\s*1)', code_clean):
+        raise check50.Failure(
+            "Out of bounds array access detected in loop condition.",
+            help="Since you are comparing 'arr[i] > arr[i + 1]' inside the loop, the loop index must stop before the last element. Make sure your condition is 'i < n - 1' (or 'i < size - 1') to prevent accessing index 'i + 1' out of bounds."
         )
