@@ -56,6 +56,21 @@ def test_valid_input():
 
 
 @check50.check(test_compile)
+def test_start_index_zero():
+    """handles starting index 0 correctly (e.g., 'Programming', 0, 5)"""
+    run = check50.run("./substring-extractor").stdin("Programming", prompt=False).stdin("0", prompt=False).stdin("5", prompt=False)
+    
+    expected = (
+        "Enter text: "
+        "Enter start index: "
+        "Enter length: "
+        "Original length: 11 "
+        "Substring: Progr"
+    )
+    run.stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
 def test_invalid_index():
     """handles invalid index input: 'Programming', 15, 2"""
     run = check50.run("./substring-extractor").stdin("Programming", prompt=False).stdin("15", prompt=False).stdin("2", prompt=False)
@@ -71,14 +86,41 @@ def test_invalid_index():
 
 
 @check50.check(test_compile)
+def test_negative_index():
+    """handles invalid negative index input: 'Programming', -1, 5"""
+    run = check50.run("./substring-extractor").stdin("Programming", prompt=False).stdin("-1", prompt=False).stdin("5", prompt=False)
+    
+    expected = (
+        "Enter text: "
+        "Enter start index: "
+        "Enter length: "
+        "Original length: 11 "
+        "Invalid index"
+    )
+    run.stdout(expected, regex=False).exit(0)
+
+
+@check50.check(test_compile)
 def test_method_usage():
-    """verifies that .substr() and .length() or .size() methods are used"""
+    """verifies that .substr() and .length() or .size() methods are used, and getline and <string> header are included"""
     with open("substring-extractor.cpp", "r") as f:
         code = f.read()
     
     # Remove comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+
+    if not re.search(r'#include\s*<\s*string\s*>', code_clean):
+        raise check50.Failure(
+            "Missing #include <string>",
+            help="Make sure to write '#include <string>' at the top of substring-extractor.cpp when using std::string."
+        )
+
+    if "getline" not in code_clean:
+        raise check50.Failure(
+            "Could not find the 'getline' function used in substring-extractor.cpp.",
+            help="Make sure you read the line of text using getline(cin, text)."
+        )
     
     if ".substr" not in code_clean:
         raise check50.Failure(
