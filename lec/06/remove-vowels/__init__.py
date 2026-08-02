@@ -78,13 +78,26 @@ def test_no_vowels():
 
 @check50.check(test_compile)
 def test_method_usage():
-    """verifies that .erase() method is used"""
+    """verifies that .erase() method is used, <string> is included, and no out-of-bounds loop boundary is present"""
     with open("remove-vowels.cpp", "r") as f:
         code = f.read()
     
     # Remove comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+
+    if not re.search(r'#include\s*<\s*string\s*>', code_clean):
+        raise check50.Failure(
+            "Missing #include <string>",
+            help="Make sure to write '#include <string>' at the top of remove-vowels.cpp when using std::string."
+        )
+
+    # Check for <= text.length() or <= text.size()
+    if re.search(r'<=\s*(?:\(\s*int\s*\)\s*)?\w*\.(length|size)\(\)', code_clean):
+        raise check50.Failure(
+            "Out of bounds loop boundary detected.",
+            help="Make sure your loop condition uses '<' instead of '<=' when iterating over string indices to avoid out-of-bounds access."
+        )
     
     if ".erase" not in code_clean:
         raise check50.Failure(

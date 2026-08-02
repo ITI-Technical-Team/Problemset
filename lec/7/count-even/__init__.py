@@ -75,7 +75,7 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """countEvenNumbers function is defined in count-even.cpp"""
+    """countEvenNumbers function is defined in count-even.cpp and loop bounds are safe"""
     with open("count-even.cpp", "r") as f:
         code = f.read()
     
@@ -88,4 +88,11 @@ def test_function_defined():
         raise check50.Failure(
             "Could not find function 'int countEvenNumbers(int arr[], int size)' defined.",
             help="Define the function with the signature: int countEvenNumbers(int arr[], int size) as shown in the slide."
+        )
+
+    # Check for <= size
+    if re.search(r'<=\s*size\b', code_clean):
+        raise check50.Failure(
+            "Out of bounds array access detected in loop condition.",
+            help="Make sure your loop condition uses '< size' instead of '<= size' to avoid accessing index equal to the array size (which is out of bounds)."
         )
