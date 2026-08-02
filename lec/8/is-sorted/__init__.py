@@ -93,8 +93,11 @@ def test_function_defined():
         )
 
     # Check for out of bounds loop condition where student goes up to n or n-1 (inclusive) while checking i+1
-    if re.search(r'(?:i\s*<\s*(?:n|size)\s*(?:;|\))|i\s*<=\s*(?:n|size)\s*-\s*1\s*(?:;|\)))', code_clean):
-        raise check50.Failure(
-            "Out of bounds array access detected in loop condition.",
-            help="Since you are comparing 'arr[i] > arr[i + 1]' inside the loop, the loop index must stop before the last element. Make sure your condition is 'i < n - 1' (or 'i < size - 1') to prevent accessing index 'i + 1' out of bounds."
-        )
+    match_func = re.search(r'\bbool\s+isSorted\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
+    if match_func:
+        is_sorted_func = match_func.group(0)
+        if re.search(r'(?:i\s*<\s*(?:n|size)\s*(?:;|\))|i\s*<=\s*(?:n|size)\s*-\s*1\s*(?:;|\)))', is_sorted_func):
+            raise check50.Failure(
+                "Out of bounds array access detected in loop condition.",
+                help="Since you are comparing 'arr[i] > arr[i + 1]' inside the loop, the loop index must stop before the last element. Make sure your condition is 'i < n - 1' (or 'i < size - 1') to prevent accessing index 'i + 1' out of bounds."
+            )
