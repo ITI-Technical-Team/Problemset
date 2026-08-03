@@ -93,10 +93,27 @@ def test_function_defined():
         )
 
     # Check for out of bounds loop condition where student goes up to n or n-1 (inclusive) while checking i+1
-    match_func = re.search(r'\bbool\s+isSorted\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
-    if match_func:
-        is_sorted_func = match_func.group(0)
-        if re.search(r'(?:i\s*<\s*(?:n|size)\s*(?:;|\))|i\s*<=\s*(?:n|size)\s*-\s*1\s*(?:;|\)))', is_sorted_func):
+    idx = code_clean.find("isSorted")
+    if idx != -1:
+        # Find the function opening brace
+        b_idx = code_clean.find("{", idx)
+        is_sorted_func = ""
+        if b_idx != -1:
+            count = 1
+            for i in range(b_idx + 1, len(code_clean)):
+                if code_clean[i] == "{":
+                    count += 1
+                elif code_clean[i] == "}":
+                    count -= 1
+                    if count == 0:
+                        is_sorted_func = code_clean[idx:i+1]
+                        break
+            else:
+                is_sorted_func = code_clean[idx:]
+        else:
+            is_sorted_func = code_clean[idx:]
+
+        if is_sorted_func and re.search(r'(?:i\s*<\s*(?:n|size)\s*(?:;|\))|i\s*<=\s*(?:n|size)\s*-\s*1\s*(?:;|\)))', is_sorted_func):
             raise check50.Failure(
                 "Out of bounds array access detected in loop condition.",
                 help="Since you are comparing 'arr[i] > arr[i + 1]' inside the loop, the loop index must stop before the last element. Make sure your condition is 'i < n - 1' (or 'i < size - 1') to prevent accessing index 'i + 1' out of bounds."

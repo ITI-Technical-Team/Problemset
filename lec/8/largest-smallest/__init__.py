@@ -84,10 +84,30 @@ def test_function_defined():
         )
 
     # Check for out of bounds loop condition where student goes up to n (inclusive)
-    match_func = re.search(r'\bvoid\s+FindLarge?tAndSmallest\s*\([^)]*\)\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}', code_clean)
-    if match_func:
-        func_body = match_func.group(0)
-        if re.search(r'<=\s*(?:n|size)\b', func_body):
+    idx = code_clean.find("FindLargetAndSmallest")
+    if idx == -1:
+        idx = code_clean.find("FindLargestAndSmallest")
+
+    if idx != -1:
+        # Find the function opening brace
+        b_idx = code_clean.find("{", idx)
+        func_body = ""
+        if b_idx != -1:
+            count = 1
+            for i in range(b_idx + 1, len(code_clean)):
+                if code_clean[i] == "{":
+                    count += 1
+                elif code_clean[i] == "}":
+                    count -= 1
+                    if count == 0:
+                        func_body = code_clean[idx:i+1]
+                        break
+            else:
+                func_body = code_clean[idx:]
+        else:
+            func_body = code_clean[idx:]
+
+        if func_body and re.search(r'<=\s*(?:n|size)\b', func_body):
             raise check50.Failure(
                 "Out of bounds array access detected in loop condition.",
                 help="Make sure your loop condition uses '< n' (or '< size') instead of '<=' to avoid out-of-bounds access."
