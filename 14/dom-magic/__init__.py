@@ -123,21 +123,22 @@ if (_alerted === null) {
     console.log("FAIL_NO_ALERT");
     process.exit(1);
 }
-const out = _alerted.toLowerCase();
+const alerted = _alerted;
+const out = alerted.toLowerCase();
 if (!out.includes("alice")) {
-    console.log("FAIL_NAME:" + _alerted);
+    console.log("FAIL_NAME:" + alerted);
     process.exit(1);
 }
 if (!out.includes("210")) {
-    console.log("FAIL_TOTAL:" + _alerted);
+    console.log("FAIL_TOTAL:" + alerted);
     process.exit(1);
 }
-if (!out.includes("70.00")) {
-    console.log("FAIL_AVERAGE:" + _alerted);
+if (!/\b70\.00\b/.test(alerted)) {
+    console.log("FAIL_AVERAGE:" + alerted);
     process.exit(1);
 }
-if (!out.includes("pass")) {
-    console.log("FAIL_RESULT_PASS:" + _alerted);
+if (!alerted.includes("Pass")) {
+    console.log("FAIL_RESULT_PASS:" + alerted);
     process.exit(1);
 }
 console.log("PASS1");
@@ -161,17 +162,18 @@ if (_alerted === null) {
     console.log("FAIL_NO_ALERT");
     process.exit(1);
 }
-const out2 = _alerted.toLowerCase();
+const alerted = _alerted;
+const out2 = alerted.toLowerCase();
 if (!out2.includes("150")) {
-    console.log("FAIL_TOTAL:" + _alerted);
+    console.log("FAIL_TOTAL:" + alerted);
     process.exit(1);
 }
-if (!out2.includes("50.00")) {
-    console.log("FAIL_AVERAGE:" + _alerted);
+if (!/\b50\.00\b/.test(alerted)) {
+    console.log("FAIL_AVERAGE:" + alerted);
     process.exit(1);
 }
-if (!out2.includes("pass")) {
-    console.log("FAIL_RESULT_PASS:" + _alerted);
+if (!alerted.includes("Pass")) {
+    console.log("FAIL_RESULT_PASS:" + alerted);
     process.exit(1);
 }
 console.log("PASS2");
@@ -195,17 +197,18 @@ if (_alerted === null) {
     console.log("FAIL_NO_ALERT");
     process.exit(1);
 }
-const out3 = _alerted.toLowerCase();
+const alerted = _alerted;
+const out3 = alerted.toLowerCase();
 if (!out3.includes("120")) {
-    console.log("FAIL_TOTAL:" + _alerted);
+    console.log("FAIL_TOTAL:" + alerted);
     process.exit(1);
 }
-if (!out3.includes("40.00")) {
-    console.log("FAIL_AVERAGE:" + _alerted);
+if (!/\b40\.00\b/.test(alerted)) {
+    console.log("FAIL_AVERAGE:" + alerted);
     process.exit(1);
 }
-if (!out3.includes("fail")) {
-    console.log("FAIL_RESULT_FAIL:" + _alerted);
+if (!alerted.includes("Fail")) {
+    console.log("FAIL_RESULT_FAIL:" + alerted);
     process.exit(1);
 }
 console.log("PASS3");
