@@ -24,7 +24,7 @@ def _check_tag_closed(filename, tag):
 def _html():
     html = _read("index.html")
     clean_html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
-    return clean_html.lower()
+    return clean_html
 
 
 def _get_css():
@@ -55,7 +55,7 @@ def _get_css():
             )
         css_content += "\n" + _read("style.css")
         
-    return css_content.lower()
+    return css_content
 
 
 # ─── existence & structure ────────────────────────────────────────────────────
@@ -74,10 +74,10 @@ def has_card_div():
     _check_tag_closed("index.html", "body")
     _check_tag_closed("index.html", "div")
     html = _html()
-    match = re.search(r'<div[^+]+class=["\']?([a-zA-Z0-9\-_]+)["\']?[^>]*>', html)
+    match = re.search(r'<div[^+]+class=["\']?([a-zA-Z0-9\-_]+)["\']?[^>]*>', html, re.IGNORECASE)
     # Fallback search for class attribute in a div
     if not match:
-        match = re.search(r'<div[^>]*class=["\']?([a-zA-Z0-9\-_]+)["\']?[^>]*>', html)
+        match = re.search(r'<div[^>]*class=["\']?([a-zA-Z0-9\-_]+)["\']?[^>]*>', html, re.IGNORECASE)
     if not match:
         raise check50.Failure(
             "Missing <div class=\"...\"> container in index.html",
@@ -91,7 +91,7 @@ def has_h2_and_p(card_class):
     """the card contains an <h2> title and a <p> paragraph"""
     _check_tag_closed("index.html", "h2")
     _check_tag_closed("index.html", "p")
-    html = _html()
+    html = _html().lower()
     # Check for h2
     if "<h2" not in html or "</h2>" not in html:
         raise check50.Failure("Missing <h2> heading for the title inside index.html")
