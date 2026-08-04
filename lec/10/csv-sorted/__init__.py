@@ -39,23 +39,32 @@ def test_python_valid():
 
 @check50.check(test_python_valid)
 def test_reads_csv():
-    """csv-sorted.py opens and processes favorites.csv"""
+    """csv-sorted.py opens and processes favorites.csv using DictReader"""
     code = open("csv-sorted.py", encoding="utf-8", errors="replace").read()
-    if "open(" not in code and "csv" not in code and "pandas" not in code:
+    
+    import re
+    code_clean = re.sub(r'#[^\n]*', '', code)
+    
+    if "DictReader" not in code_clean:
         raise check50.Failure(
-            "csv-sorted.py does not open or process favorites.csv",
-            help="Use open('favorites.csv') or csv.DictReader to read the CSV data"
+            "csv-sorted.py does not use DictReader",
+            help="Make sure to use csv.DictReader(file) to read the CSV data as dictionaries"
+        )
+    if "open(" not in code_clean:
+        raise check50.Failure(
+            "csv-sorted.py does not open favorites.csv",
+            help="Use open('favorites.csv') to read the CSV file"
         )
 
 
-@check50.check(test_python_valid)
+@check50.check(test_reads_csv)
 def test_output():
     """prints language names and frequencies sorted alphabetically (A-Z)"""
+    # ── Test 1: standard favorites.csv ────────────────────────────────────────
     result = check50.run("python3 csv-sorted.py")
     result.exit(0)
     out = result.stdout()
     
-    # Check for the key-value outputs in the string
     idx_c = out.find("C: 78")
     idx_py = out.find("Python: 280")
     idx_scr = out.find("Scratch: 40")
@@ -71,4 +80,42 @@ def test_output():
         raise check50.Failure(
             "Output is not sorted alphabetically from A to Z",
             help="Ensure you print C first, then Python, then Scratch"
+        )
+
+    # ── Test 2: modified favorites.csv (appended rows to check dynamic sorting)
+    try:
+        with open("favorites.csv", "a", encoding="utf-8") as file:
+            file.write('\n"1/1/2026 12:00:00","Python","TestProblem"')
+            file.write('\n"1/1/2026 12:00:00","Java","TestProblem"')
+    except Exception as e:
+        raise check50.Failure(f"Failed to append test rows to favorites.csv: {e}")
+
+    result2 = check50.run("python3 csv-sorted.py")
+    result2.exit(0)
+    out2 = result2.stdout()
+
+    idx_c2 = out2.find("C: 78")
+    idx_java2 = out2.find("Java: 1")
+    idx_py2 = out2.find("Python: 281")
+    idx_scr2 = out2.find("Scratch: 40")
+
+    if idx_java2 == -1:
+        raise check50.Failure(
+            "Counts and sorting did not update dynamically. Expected Java to be counted and printed on modified CSV",
+            help="Make sure you read favorites.csv and print language frequencies dynamically rather than printing a hardcoded list."
+        )
+    if idx_py2 == -1:
+        raise check50.Failure(
+            "Counts did not update dynamically. Expected Python count to be 281 on modified CSV",
+            help="Make sure you read favorites.csv and print language frequencies dynamically rather than printing a hardcoded list."
+        )
+    if idx_c2 == -1:
+        raise check50.Failure("Expected count for 'C' (C: 78) not found in output on modified CSV")
+    if idx_scr2 == -1:
+        raise check50.Failure("Expected count for 'Scratch' (Scratch: 40) not found in output on modified CSV")
+
+    if not (idx_c2 < idx_java2 < idx_py2 < idx_scr2):
+        raise check50.Failure(
+            "Output is not sorted alphabetically from A to Z on modified CSV",
+            help="Make sure you sort all languages alphabetically: C, then Java, then Python, then Scratch"
         )
