@@ -51,13 +51,25 @@ def test_reads_csv():
 @check50.check(test_python_valid)
 def test_output():
     """prints correct problem columns in order"""
+    import csv
+    expected = []
+    try:
+        with open("favorites.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)
+            for row in reader:
+                expected.append(row[2].strip().strip('"').strip("'"))
+    except Exception as e:
+        raise check50.Failure(f"Failed to read favorites.csv: {e}")
+
     result = check50.run("python3 csv-reader.py")
     result.exit(0)
     out = result.stdout()
     lines = [line.strip().strip('"').strip("'") for line in out.splitlines() if line.strip()]
-    if len(lines) < 398:
-        raise check50.Failure(f"Expected 398 rows of output, but got {len(lines)}")
-    expected = ["Hello, World", "DNA", "Hello, World", "Scratch", "Speller"]
-    for i in range(5):
+
+    if len(lines) != len(expected):
+        raise check50.Failure(f"Expected {len(expected)} rows of output, but got {len(lines)}")
+
+    for i in range(len(expected)):
         if lines[i] != expected[i]:
             raise check50.Failure(f"Row {i+1} mismatch: expected '{expected[i]}', got '{lines[i]}'")
