@@ -73,5 +73,5 @@ def test_stack_used():
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
     
-    if "stack" not in code_clean:
+    if not re.search(r'stack\s*<', code_clean):
         raise check50.Failure("std::stack is not used in reverse-string.cpp.")
