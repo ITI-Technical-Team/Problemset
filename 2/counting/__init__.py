@@ -4,6 +4,32 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 import scratch_helper
 
+def has_nested_block(container_id, opcodes, blocks):
+    """
+    Recursively scans all blocks nested inside the SUBSTACK (or SUBSTACK2)
+    of container_id to see if any block has an opcode in the given set/list.
+    """
+    container = blocks.get(container_id)
+    if not container:
+        return None
+        
+    for substack_key in ("SUBSTACK", "SUBSTACK2"):
+        inp = container.get("inputs", {}).get(substack_key)
+        if not inp:
+            continue
+        curr = inp[1] if (isinstance(inp, list) and len(inp) > 1 and isinstance(inp[1], str)) else None
+        visited = set()
+        while curr and curr in blocks and curr not in visited:
+            visited.add(curr)
+            cb = blocks[curr]
+            if cb.get("opcode") in opcodes:
+                return cb
+            nested_match = has_nested_block(curr, opcodes, blocks)
+            if nested_match:
+                return nested_match
+            curr = cb.get("next")
+    return None
+
 @check50.check()
 def exists():
     """project.sb3 exists"""
@@ -188,20 +214,9 @@ def say_inside_loop():
     for b_id, b in blocks.items():
         if b.get("opcode") in loop_opcodes:
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inputs = b.get("inputs", {})
-                if "SUBSTACK" in inputs:
-                    sub_first = scratch_helper.get_block_input_value(b, "SUBSTACK", blocks)
-                    curr = sub_first
-                    visited = set()
-                    while curr and curr in blocks and curr not in visited:
-                        visited.add(curr)
-                        cb = blocks[curr]
-                        if cb.get("opcode", "") in ("looks_say", "looks_sayforsecs"):
-                            has_say = True
-                            break
-                        curr = cb.get("next")
-            if has_say:
-                break
+                if has_nested_block(b_id, {"looks_say", "looks_sayforsecs"}, blocks):
+                    has_say = True
+                    break
     if not has_say:
         raise check50.Failure(
             "Missing say block inside the loop.",
@@ -219,20 +234,9 @@ def change_inside_loop():
     for b_id, b in blocks.items():
         if b.get("opcode") in loop_opcodes:
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inputs = b.get("inputs", {})
-                if "SUBSTACK" in inputs:
-                    sub_first = scratch_helper.get_block_input_value(b, "SUBSTACK", blocks)
-                    curr = sub_first
-                    visited = set()
-                    while curr and curr in blocks and curr not in visited:
-                        visited.add(curr)
-                        cb = blocks[curr]
-                        if cb.get("opcode", "") in ("data_changevariableby", "data_setvariableto"):
-                            has_change = True
-                            break
-                        curr = cb.get("next")
-            if has_change:
-                break
+                if has_nested_block(b_id, {"data_changevariableby", "data_setvariableto"}, blocks):
+                    has_change = True
+                    break
     if not has_change:
         raise check50.Failure(
             "Missing variable increment block inside the loop.",
@@ -250,21 +254,9 @@ def wait_inside_loop():
     for b_id, b in blocks.items():
         if b.get("opcode") in loop_opcodes:
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inputs = b.get("inputs", {})
-                if "SUBSTACK" in inputs:
-                    sub_first = scratch_helper.get_block_input_value(b, "SUBSTACK", blocks)
-                    curr = sub_first
-                    visited = set()
-                    while curr and curr in blocks and curr not in visited:
-                        visited.add(curr)
-                        cb = blocks[curr]
-                        op = cb.get("opcode", "")
-                        if op == "control_wait" or op == "looks_sayforsecs":
-                            has_wait = True
-                            break
-                        curr = cb.get("next")
-            if has_wait:
-                break
+                if has_nested_block(b_id, {"control_wait", "looks_sayforsecs"}, blocks):
+                    has_wait = True
+                    break
     if not has_wait:
         raise check50.Failure(
             "Missing wait block (or say for seconds block) inside the loop.",
@@ -278,30 +270,16 @@ def says_variable_value():
     blocks = scratch_helper.get_blocks(project)
     
     loop_opcodes = ["control_repeat", "control_repeat_until", "control_forever"]
-    says_var = False
-    found_say = False
+    found_say = None
     for b_id, b in blocks.items():
         if b.get("opcode") in loop_opcodes:
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inputs = b.get("inputs", {})
-                if "SUBSTACK" in inputs:
-                    sub_first = scratch_helper.get_block_input_value(b, "SUBSTACK", blocks)
-                    curr = sub_first
-                    visited = set()
-                    while curr and curr in blocks and curr not in visited:
-                        visited.add(curr)
-                        cb = blocks[curr]
-                        if cb.get("opcode", "") in ("looks_say", "looks_sayforsecs"):
-                            found_say = True
-                            if is_input_variable(cb, "MESSAGE", blocks):
-                                says_var = True
-                                break
-                        curr = cb.get("next")
-            if says_var:
-                break
+                found_say = has_nested_block(b_id, {"looks_say", "looks_sayforsecs"}, blocks)
+                if found_say:
+                    break
     if not found_say:
         raise check50.Failure("Missing say block inside the loop.")
-    if not says_var:
+    if not is_input_variable(found_say, "MESSAGE", blocks):
         raise check50.Failure(
             "Say block is speaking a hardcoded value instead of the variable.",
             help="Drag your variable reporter block (from the Variables tab) into the say block's text slot."
@@ -309,80 +287,107 @@ def says_variable_value():
 
 @check50.check(valid_sb3)
 def increments_by_two():
-    """variable increments by 2 in each loop iteration"""
+    """variable increments correctly in each loop iteration"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
     
     loop_opcodes = ["control_repeat", "control_repeat_until", "control_forever"]
-    inc_by_two = False
-    found_change = False
+    change_block = None
     for b_id, b in blocks.items():
         if b.get("opcode") in loop_opcodes:
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                inputs = b.get("inputs", {})
-                if "SUBSTACK" in inputs:
-                    sub_first = scratch_helper.get_block_input_value(b, "SUBSTACK", blocks)
-                    curr = sub_first
-                    visited = set()
-                    while curr and curr in blocks and curr not in visited:
-                        visited.add(curr)
-                        cb = blocks[curr]
-                        if cb.get("opcode", "") == "data_changevariableby":
-                            found_change = True
-                            val_str = scratch_helper.get_block_input_value(cb, "VALUE", blocks)
-                            if val_str is not None:
-                                try:
-                                    val = int(float(val_str))
-                                    if val == 2:
-                                        inc_by_two = True
-                                        break
-                                except ValueError:
-                                    pass
-                        curr = cb.get("next")
-            if inc_by_two:
-                break
-    if not found_change:
+                change_block = has_nested_block(b_id, {"data_changevariableby"}, blocks)
+                if change_block:
+                    break
+                    
+    if not change_block:
         raise check50.Failure("Missing variable change block inside the loop.")
-    if not inc_by_two:
+        
+    val_str = scratch_helper.get_block_input_value(change_block, "VALUE", blocks)
+    if val_str is None:
+        raise check50.Failure("Variable change block has no value.")
+        
+    try:
+        val = int(float(val_str))
+    except ValueError:
+        raise check50.Failure(f"Could not parse increment value: {val_str}")
+        
+    if val not in (1, 2):
         raise check50.Failure(
-            "Variable does not increment by 2.",
-            help="Set the increment value in 'change [variable] by [2]' to exactly 2."
+            f"Variable increments by {val} in each loop iteration.",
+            help="To count even numbers up to 100, either increment by 2 in a 50-repeat loop, or increment by 1 in a 100-repeat loop with an even number check."
         )
 
 @check50.check(valid_sb3)
 def count_limit():
-    """repeat loop counts up to 100 (e.g. repeat 50 times)"""
+    """repeat loop counts up to 100 correctly based on increment size"""
     project = scratch_helper.get_project()
     blocks = scratch_helper.get_blocks(project)
 
-    found_repeat = False
-    valid_limit = False
-    times = 0
+    # 1. Find the repeat block
+    repeat_block_id = None
+    repeat_block = None
     for b_id, b in blocks.items():
         if b.get("opcode") == "control_repeat":
             if scratch_helper.is_connected_to_hat(b_id, blocks):
-                found_repeat = True
-                times_str = scratch_helper.get_block_input_value(b, "TIMES", blocks)
-                if times_str is not None:
-                    try:
-                        times = int(float(times_str))
-                        if 40 <= times <= 60:
-                            valid_limit = True
-                            break
-                    except ValueError:
-                        pass
-                        
-    if not found_repeat:
+                repeat_block_id = b_id
+                repeat_block = b
+                break
+                
+    if not repeat_block:
+        # If they used repeat_until or forever, that is acceptable, we skip repeat-specific limit check
         return
 
-    if not valid_limit:
-        if times > 60:
+    # 2. Get the increment value
+    change_block = has_nested_block(repeat_block_id, {"data_changevariableby"}, blocks)
+    inc_val = 2 # default fallback
+    if change_block:
+        val_str = scratch_helper.get_block_input_value(change_block, "VALUE", blocks)
+        if val_str is not None:
+            try:
+                inc_val = int(float(val_str))
+            except ValueError:
+                pass
+
+    # 3. Get the repeat times
+    times_str = scratch_helper.get_block_input_value(repeat_block, "TIMES", blocks)
+    if times_str is None:
+        raise check50.Failure("Repeat loop times is empty.")
+    try:
+        times = int(float(times_str))
+    except ValueError:
+        raise check50.Failure(f"Could not parse repeat times: {times_str}")
+
+    # 4. Check limit based on increment
+    if inc_val == 2:
+        if not (40 <= times <= 60):
+            if times > 60:
+                raise check50.Failure(
+                    f"Repeat count is too high ({times} times).",
+                    help="If incrementing by 2, repeating 50 times reaches 100. Repeating 100 times would count up to 200!"
+                )
+            else:
+                raise check50.Failure(
+                    f"Repeat count is too low ({times} times).",
+                    help="To count even numbers up to 100 (incrementing by 2), repeat 50 times."
+                )
+    elif inc_val == 1:
+        # Must have an if block and mod block to filter evens
+        has_if = has_nested_block(repeat_block_id, {"control_if", "control_if_else"}, blocks) is not None
+        has_mod = any(b.get("opcode") == "operator_mod" for b in blocks.values())
+        if not (has_if and has_mod):
             raise check50.Failure(
-                f"Repeat count is too high ({times} times).",
-                help="If incrementing by 2, repeating 50 times reaches 100. Repeating 100 times would count up to 200!"
+                "If using an increment of 1, you must include an 'if' block and a 'mod' operator to filter even numbers.",
+                help="To output only even numbers when incrementing by 1, use: if (counter mod 2 = 0) then say (counter)."
             )
-        else:
-            raise check50.Failure(
-                f"Repeat count is too low ({times} times).",
-                help="To count even numbers up to 100 (incrementing by 2), repeat 50 times."
-            )
+        if not (90 <= times <= 110):
+            if times > 110:
+                raise check50.Failure(
+                    f"Repeat count is too high ({times} times).",
+                    help="If incrementing by 1, repeating 100 times reaches 100. Repeating more than 100 times would count beyond 100!"
+                )
+            else:
+                raise check50.Failure(
+                    f"Repeat count is too low ({times} times).",
+                    help="To count even numbers up to 100 (incrementing by 1), repeat 100 times."
+                )
