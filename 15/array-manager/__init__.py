@@ -122,12 +122,10 @@ if (!first_alert.includes("mango") || !first_alert.includes("add")) {
     process.exit(1);
 }
 const second_alert = alerted[1].toLowerCase();
-const expected_order = ["mango", "grape", "cherry", "blueberry", "apple"];
-for (const f of expected_order) {
-    if (!second_alert.includes(f)) {
-        realLog("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
-        process.exit(1);
-    }
+const expected_str = "mango, grape, cherry, blueberry, apple";
+if (!second_alert.includes(expected_str)) {
+    realLog("FAIL_SECOND_ALERT_FORMAT:" + expected_str + ":" + alerted[1]);
+    process.exit(1);
 }
 // Check log output
 if (logged.length < 5) {
@@ -177,12 +175,10 @@ if (!first_alert.includes("already") || !first_alert.includes("apple")) {
     process.exit(1);
 }
 const second_alert = alerted[1].toLowerCase();
-const expected_order = ["grape", "cherry", "blueberry", "apple"];
-for (const f of expected_order) {
-    if (!second_alert.includes(f)) {
-        realLog("FAIL_SECOND_ALERT_MISSING:" + f + ":" + alerted[1]);
-        process.exit(1);
-    }
+const expected_str = "grape, cherry, blueberry, apple";
+if (!second_alert.includes(expected_str)) {
+    realLog("FAIL_SECOND_ALERT_FORMAT:" + expected_str + ":" + alerted[1]);
+    process.exit(1);
 }
 if (logged.length < 4) {
     realLog("FAIL_LOGS_COUNT:" + logged.length);
@@ -233,12 +229,12 @@ def _raise_array_failure(out, test_case):
             f"Incorrect first alert for an existing fruit ({test_case})",
             help=f"Expected an alert confirming the fruit is already in the list. Got: {got!r}"
         )
-    elif out.startswith("FAIL_SECOND_ALERT_MISSING"):
+    elif out.startswith("FAIL_SECOND_ALERT_FORMAT"):
         parts = out.split(":")
-        fruit, got = parts[1], parts[2]
+        expected, got = parts[1], parts[2]
         raise check50.Failure(
-            f"Incorrect final fruit list layout in alert ({test_case})",
-            help=f"Expected the joined fruit list to contain '{fruit}'. Got: {got!r}"
+            f"Incorrect final fruit list format in alert ({test_case})",
+            help=f"Expected the final alert to contain the comma-separated list '{expected}' (using .join(\", \")). Got: {got!r}"
         )
     elif out.startswith("FAIL_LOGS_COUNT"):
         got = out.split(":", 1)[1]
