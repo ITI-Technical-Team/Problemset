@@ -52,5 +52,5 @@ def test_queue_used():
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
     
-    if "queue" not in code_clean:
+    if not re.search(r'queue\s*<', code_clean):
         raise check50.Failure("std::queue is not used in queue-line.cpp.")
