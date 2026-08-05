@@ -66,12 +66,27 @@ def test_random():
 
 @check50.check(test_compile)
 def test_stack_used():
-    """stack container is used in reverse-string.cpp"""
+    """stack container and string library are used in reverse-string.cpp"""
     with open("reverse-string.cpp", "r") as f:
         code = f.read()
     
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
     
-    if not re.search(r'stack\s*<', code_clean):
+    if not re.search(r'#include\s*<\s*string\s*>', code_clean):
+        raise check50.Failure(
+            "reverse-string.cpp does not include the <string> library.",
+            help="Add '#include <string>' at the top of your file to use strings properly."
+        )
+
+    match = re.search(r'stack\s*<\s*[^>]*\s*>\s*([a-zA-Z0-9_]+)', code_clean)
+    if not match:
         raise check50.Failure("std::stack is not used in reverse-string.cpp.")
+        
+    var_name = match.group(1)
+    
+    if not re.search(rf'{var_name}\s*\.\s*push', code_clean) or not re.search(rf'{var_name}\s*\.\s*pop', code_clean):
+        raise check50.Failure(
+            f"std::stack variable '{var_name}' is declared but not pushed to or popped from.",
+            help="You must push all characters of the string onto the stack and pop them one by one to reverse it."
+        )
