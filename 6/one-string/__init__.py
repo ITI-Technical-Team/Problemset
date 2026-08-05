@@ -84,3 +84,20 @@ def test_string_included():
     
     if not re.search(r'#\s*include\s*[<"]string[>"]', code_clean):
         raise check50.Failure("Did not find #include <string> in one-string.cpp.")
+
+
+@check50.check(test_compile)
+def test_concatenation_used():
+    """string concatenation operator (+) or append() function is used in one-string.cpp"""
+    with open("one-string.cpp", "r") as f:
+        code = f.read()
+    
+    import re
+    code_clean = re.sub(r'//.*', '', code)
+    code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
+    
+    if not re.search(r'\+|\.\s*append\b', code_clean):
+        raise check50.Failure(
+            "String concatenation is not used in one-string.cpp.",
+            help="You must concatenate the two strings using the '+' operator or '.append()' method rather than printing them side-by-side."
+        )
