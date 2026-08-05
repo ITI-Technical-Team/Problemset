@@ -65,6 +65,13 @@ def test_output():
     result.exit(0)
     out = result.stdout()
     
+    lines = [line.strip() for line in out.splitlines() if line.strip()]
+    if len(lines) != 3:
+        raise check50.Failure(
+            f"Expected exactly 3 lines of output, but got {len(lines)}.",
+            help="Ensure you only print the final sorted frequencies, with no duplicate or extra print statements."
+        )
+    
     idx_c = out.find("C: 78")
     idx_py = out.find("Python: 280")
     idx_scr = out.find("Scratch: 40")
@@ -93,6 +100,13 @@ def test_output():
     result2 = check50.run("python3 csv-sorted.py")
     result2.exit(0)
     out2 = result2.stdout()
+
+    lines2 = [line.strip() for line in out2.splitlines() if line.strip()]
+    if len(lines2) != 4:
+        raise check50.Failure(
+            f"Expected exactly 4 lines of output on modified CSV, but got {len(lines2)}.",
+            help="Ensure you only print the final sorted frequencies, with no duplicate or extra print statements."
+        )
 
     idx_c2 = out2.find("C: 78")
     idx_java2 = out2.find("Java: 1")
