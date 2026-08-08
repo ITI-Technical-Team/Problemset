@@ -88,6 +88,13 @@ def valid_sql_syntax():
 def test_correct_results():
     """finds total amount spent by each customer, filtering for totals > 500"""
     rows = run_sql_file("store.db", "total-spent.sql")
+    if not rows:
+        raise check50.Failure("Query returned no results.")
+    if any(len(row) != 2 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the 'customer_id' and the total sum columns (exactly 2 columns)."
+        )
     # Normalize rows (customer_id, total_amount)
     normalized = sorted([(int(row[0]), float(row[1])) for row in rows])
     expected = sorted([

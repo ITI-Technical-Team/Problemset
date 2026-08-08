@@ -109,9 +109,10 @@ def test_dynamic_db():
     if not os.path.exists("store.db"):
         setup_db()
     conn = sqlite3.connect("store.db")
-    # Add Jerry (should match) and Jenny (should match) and Tom (should not)
+    # Add Jerry (should match), Tom (should not), and Benji (should not, contains 'j' but does not start with 'J')
     conn.execute("INSERT INTO CUSTOMERS VALUES (7, 'Jerry', 'Mouse', 12, 'USA')")
     conn.execute("INSERT INTO CUSTOMERS VALUES (8, 'Tom', 'Cat', 15, 'USA')")
+    conn.execute("INSERT INTO CUSTOMERS VALUES (9, 'Benji', 'Dog', 5, 'USA')")
     conn.commit()
     conn.close()
 
@@ -127,5 +128,5 @@ def test_dynamic_db():
     if normalized != expected:
         raise check50.Failure(
             "Query did not dynamically filter correctly based on first letter",
-            help="Make sure you use first_name LIKE 'J%'"
+            help="Make sure you use first_name LIKE 'J%' to select only names starting with 'J'."
         )
