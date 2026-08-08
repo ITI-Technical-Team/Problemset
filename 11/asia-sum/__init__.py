@@ -97,6 +97,11 @@ def test_single_number():
             f"Expected exactly 1 row (the total population), but got {len(rows)} rows",
             help="Use SUM() to aggregate all values into one result"
         )
+    if any(len(row) != 1 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the sum of the populations (exactly 1 column)."
+        )
 
 
 @check50.check(valid_sql_syntax)

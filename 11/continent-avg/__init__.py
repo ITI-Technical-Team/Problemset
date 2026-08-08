@@ -97,6 +97,11 @@ def test_returns_6_rows():
             f"Expected 6 rows (one per continent), but got {len(rows)}",
             help="Make sure you GROUP BY COUNTRY.Continent"
         )
+    if any(len(row) != 2 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the continent name and the floored average population (exactly 2 columns)."
+        )
 
 
 @check50.check(valid_sql_syntax)
