@@ -39,12 +39,21 @@ def test_python_valid():
 
 @check50.check(test_python_valid)
 def test_reads_csv():
-    """csv-reader.py opens and processes favorites.csv"""
+    """csv-reader.py opens and processes favorites.csv using csv.reader"""
     code = open("csv-reader.py", encoding="utf-8", errors="replace").read()
-    if "open(" not in code and "csv" not in code and "pandas" not in code:
+    
+    import re
+    code_clean = re.sub(r'#[^\n]*', '', code)
+    
+    if not re.search(r'csv\s*\.\s*reader\b', code_clean):
         raise check50.Failure(
-            "csv-reader.py does not open or process favorites.csv",
-            help="Use open('favorites.csv') or csv.reader to read the CSV data"
+            "csv-reader.py does not use csv.reader",
+            help="Make sure to use csv.reader(file) to read the CSV data"
+        )
+    if "open(" not in code_clean:
+        raise check50.Failure(
+            "csv-reader.py does not open favorites.csv",
+            help="Use open('favorites.csv') to read the CSV file"
         )
 
 

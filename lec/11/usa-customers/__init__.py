@@ -88,6 +88,13 @@ def valid_sql_syntax():
 def test_correct_results():
     """retrieves correct first_name and age for USA customers"""
     rows = run_sql_file("store.db", "usa-customers.sql")
+    if not rows:
+        raise check50.Failure("Query returned no results.")
+    if any(len(row) != 2 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the 'first_name' and 'age' columns (exactly 2 columns)."
+        )
     # Normalize rows
     normalized = sorted([(row[0].strip(), int(row[1])) for row in rows])
     expected = sorted([("John", 31), ("Sarah", 40)])
