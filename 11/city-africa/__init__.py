@@ -92,6 +92,13 @@ def test_sql_clauses():
 def test_exact_african_cities():
     """query returns all African cities and NO non-African cities"""
     rows = run_sql_file("cities.db", "city-africa.sql")
+    if not rows:
+        raise check50.Failure("Query returned no results.")
+    if any(len(row) != 1 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the 'CITY.NAME' column (exactly 1 column)."
+        )
     names = set(str(r[0]).strip() for r in rows if r and r[0])
 
     conn = sqlite3.connect("cities.db")

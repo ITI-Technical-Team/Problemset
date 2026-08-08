@@ -88,6 +88,13 @@ def valid_sql_syntax():
 def test_correct_results():
     """displays customer names along with their ordered items and amounts"""
     rows = run_sql_file("store.db", "customer-orders.sql")
+    if not rows:
+        raise check50.Failure("Query returned no results.")
+    if any(len(row) != 4 for row in rows):
+        raise check50.Failure(
+            "Query returned incorrect number of columns.",
+            help="Retrieve only the 'first_name', 'last_name', 'item', and 'amount' columns (exactly 4 columns)."
+        )
     # Normalize rows (first_name, last_name, item, amount)
     normalized = sorted([(row[0].strip(), row[1].strip(), row[2].strip(), float(row[3])) for row in rows])
     expected = sorted([
