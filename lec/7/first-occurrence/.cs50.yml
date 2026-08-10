@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require first-occurrence.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require first-occurrence.cpp

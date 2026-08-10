@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require vector-remove-even.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require vector-remove-even.cpp

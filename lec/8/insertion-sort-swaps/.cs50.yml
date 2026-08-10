@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require insertion-sort-swaps.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require insertion-sort-swaps.cpp

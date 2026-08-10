@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require find-minimum.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require find-minimum.cpp

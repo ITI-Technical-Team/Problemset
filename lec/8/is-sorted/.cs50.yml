@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require is-sorted.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require is-sorted.cpp

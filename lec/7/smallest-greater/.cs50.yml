@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require smallest-greater.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require smallest-greater.cpp

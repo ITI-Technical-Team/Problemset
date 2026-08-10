@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require count-even.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require count-even.cpp

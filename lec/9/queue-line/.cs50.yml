@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require queue-line.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require queue-line.cpp

@@ -4,3 +4,8 @@ lab50:
 check50:
   files:
     - !require reverse-string.cpp
+
+submit50:
+  files:
+    - !exclude "*"
+    - !require reverse-string.cpp
