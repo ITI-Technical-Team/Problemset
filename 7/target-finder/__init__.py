@@ -52,29 +52,22 @@ def test_all_yes():
     """outputs YES when the target exists in the array"""
     check50.run("./target-finder").stdin("5 1\n1 2 3 4 5\n4 9", prompt=False).stdout("YES", regex=False).exit(0)
 
-@check50.check(test_compile, timeout=15)
+@check50.check(test_compile, timeout=10)
 def test_efficiency():
     """solution runs in time on sorted input (O(N * Q) naive will exceed the time limit)"""
-    # The input array is SORTED. An efficient solution binary-searches for (z - x)
-    # giving O(Q log N) total time complexity.
-    # A naive solution that ignores the sorted property and scans the array linearly
-    # takes O(N * Q) and will TLE.
-    #
-    # N=50000 elements (sorted 1..N), Q=5000 queries (all impossible -> forces full scan on naive).
-    # Benchmarked WITHOUT fast I/O:
-    #   O(Q log N) binary search solution: < 0.1s  -> well within the 5s timeout
-    #   O(N * Q) brute-force linear search:  > 10s  -> far exceeds the 5s timeout
-    N, Q = 50000, 5000
-    elements = " ".join(str(i) for i in range(1, N + 1))  # already sorted
-    # x=1, z=N+11 => target = z - x = N+10, which is impossible to find, forcing naive to scan all N elements
-    queries = "\n".join(f"1 {N + 11}" for _ in range(Q))
+    import os
+    N, Q = 100000, 20000
+    elements = " ".join(str(i) for i in range(1, N + 1))
+    queries = "\n".join("1 300000" for _ in range(Q))
     stdin_content = f"{N} {Q}\n{elements}\n{queries}"
-    expected_out = "\n".join("NO" for _ in range(Q))
+    expected_out = "\n".join("NO" for _ in range(Q)) + "\n"
 
-    with open("efficiency_input.txt", "w") as f:
+    sandbox_dir = os.path.dirname(os.path.abspath("./target-finder"))
+    input_path = os.path.join(sandbox_dir, "efficiency_input.txt")
+    with open(input_path, "w") as f:
         f.write(stdin_content)
 
-    check50.run("timeout 8 ./target-finder < efficiency_input.txt").stdout(expected_out, regex=False).exit(0)
+    check50.run('bash -c "timeout 2 ./target-finder < efficiency_input.txt"').stdout(expected_out, regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_random():
