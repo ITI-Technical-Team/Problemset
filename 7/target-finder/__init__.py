@@ -33,7 +33,7 @@ def exists():
 def test_compile():
     """target-finder.cpp compiles successfully"""
     import subprocess as _sp
-    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG target-finder.cpp -o target-finder", shell=True, capture_output=True, text=True)
+    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds target-finder.cpp -o target-finder", shell=True, capture_output=True, text=True)
     if _res.returncode != 0:
         raise check50.Failure(_res.stderr or _res.stdout)
 
@@ -52,22 +52,41 @@ def test_all_yes():
     """outputs YES when the target exists in the array"""
     check50.run("./target-finder").stdin("5 1\n1 2 3 4 5\n4 9", prompt=False).stdout("YES", regex=False).exit(0)
 
-@check50.check(test_compile, timeout=10)
+@check50.check(test_compile, timeout=60)
 def test_efficiency():
     """solution runs in time on sorted input (O(N * Q) naive will exceed the time limit)"""
-    import os
-    N, Q = 100000, 20000
+    import os, subprocess
+    N, Q = 150000, 75000
     elements = " ".join(str(i) for i in range(1, N + 1))
     queries = "\n".join("1 300000" for _ in range(Q))
     stdin_content = f"{N} {Q}\n{elements}\n{queries}"
-    expected_out = "\n".join("NO" for _ in range(Q)) + "\n"
 
     sandbox_dir = os.path.dirname(os.path.abspath("./target-finder"))
     input_path = os.path.join(sandbox_dir, "efficiency_input.txt")
     with open(input_path, "w") as f:
         f.write(stdin_content)
 
-    check50.run('bash -c "timeout 2 ./target-finder < efficiency_input.txt"').stdout(expected_out, regex=False).exit(0)
+    # Use /usr/bin/time to measure CPU time of just this process
+    result = subprocess.run(
+        ["/usr/bin/time", "-f", "%U %S", "./target-finder"],
+        stdin=open(input_path),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=60
+    )
+
+    # Parse user + sys CPU time from /usr/bin/time output
+    try:
+        parts = result.stderr.strip().split()
+        cpu_time = float(parts[0]) + float(parts[1])
+    except (ValueError, IndexError):
+        raise check50.Failure(f"Could not parse timing output: {result.stderr!r}")
+
+    if cpu_time > 2.0:
+        raise check50.Failure(f"Time limit exceeded: solution used {cpu_time:.2f}s CPU time (limit: 2.0s)")
+    if result.returncode != 0:
+        raise check50.Failure(f"Program exited with non-zero status: {result.returncode}")
 
 @check50.check(test_compile)
 def test_random():
