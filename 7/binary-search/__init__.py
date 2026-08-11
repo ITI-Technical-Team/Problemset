@@ -46,7 +46,7 @@ def test_example1():
 def test_efficiency():
     """solution runs in time on large input (O(N*Q) solutions will exceed the time limit)"""
     import os
-    N, Q = 100000, 50000
+    N, Q = 150000, 60000
     elements = " ".join(str(i) for i in range(1, N + 1))
     queries = "\n".join("300000" for _ in range(Q))
     stdin_content = f"{N} {Q}\n{elements}\n{queries}"
