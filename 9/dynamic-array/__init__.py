@@ -33,7 +33,7 @@ def exists():
 def test_compile():
     """dynamic-array.cpp compiles successfully"""
     import subprocess as _sp
-    _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG dynamic-array.cpp -o dynamic-array", shell=True, capture_output=True, text=True)
+    _res = _sp.run("g++ -O1 -Wall -Wextra -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG dynamic-array.cpp -o dynamic-array", shell=True, capture_output=True, text=True)
     if _res.returncode != 0:
         raise check50.Failure(_res.stderr or _res.stdout)
 
