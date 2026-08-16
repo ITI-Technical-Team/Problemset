@@ -39,9 +39,21 @@ def custom_block_has_body():
             help="Attach code blocks directly under the 'define' block for your custom function."
         )
 
+@check50.check(custom_block_has_body)
+def custom_block_is_called():
+    """custom block is actually called (used) in the project"""
+    project = scratch_helper.get_project()
+    blocks = scratch_helper.get_blocks(project)
+    if not scratch_helper.check_custom_block_called(blocks):
+        raise check50.Failure(
+            "Custom block is defined but never called.",
+            help="Use your custom block by placing it inside a script that starts with a hat block (e.g. 'when green flag clicked')."
+        )
+
 @check50.check(has_custom_block)
 def has_sprites():
     """project contains at least one sprite"""
     project = scratch_helper.get_project()
     if scratch_helper.count_sprites(project) < 1:
         raise check50.Failure("Did not find any sprites in the project.")
+
