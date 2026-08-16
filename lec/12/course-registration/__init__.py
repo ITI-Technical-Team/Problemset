@@ -57,7 +57,7 @@ def test_header():
 
 @check50.check(has_doctype)
 def test_nav():
-    """index.html has <nav> containing links to Home, Courses, and Register"""
+    """index.html has <nav> containing links (with href) to Home, Courses, and Register"""
     _check_tag_closed("index.html", "nav")
     _check_tag_closed("index.html", "a")
     html = _read("index.html")
@@ -65,13 +65,22 @@ def test_nav():
     nav = soup.find("nav")
     if not nav:
         raise check50.Failure("Missing <nav> element")
-        
+
     links = nav.find_all("a")
     if len(links) < 3:
         raise check50.Failure(
             f"Found {len(links)} link(s) inside <nav>, expected at least 3",
             help="Add links for Home, Courses, and Register inside <nav> using <a> tags"
         )
+
+    # Check that links have href attributes
+    for link in links:
+        if not link.get("href"):
+            raise check50.Failure(
+                f"<a> tag with text '{link.get_text().strip()}' inside <nav> is missing an href attribute",
+                help="Each <a> tag in your navigation must have an href attribute, e.g. <a href=\"#courses\">Courses</a>"
+            )
+
     text = nav.get_text().lower()
     for link_word in ["home", "course", "register"]:
         if link_word not in text:
@@ -96,16 +105,32 @@ def test_table():
     table = soup.find("table")
     if not table:
         raise check50.Failure("Missing <table> element")
-        
-    if not table.find("thead"):
+
+    thead = table.find("thead")
+    if not thead:
         raise check50.Failure("Missing <thead> element inside <table>")
+
+    # Check that <th> cells in the header are non-empty
+    th_cells = thead.find_all("th")
+    if not th_cells:
+        raise check50.Failure(
+            "Missing <th> header cells inside <thead>",
+            help="Add <th> elements inside <thead> to label your table columns (e.g. Course, Duration)"
+        )
+    for th in th_cells:
+        if not th.get_text().strip():
+            raise check50.Failure(
+                "Found an empty <th> header cell in <thead>",
+                help="Make sure each <th> contains text to label the column (e.g. <th>Course</th>)"
+            )
+
     if not table.find("tbody"):
         raise check50.Failure("Missing <tbody> element inside <table>")
-    
+
     tfoot = table.find("tfoot")
     if not tfoot:
         raise check50.Failure("Missing <tfoot> element inside <table>")
-        
+
     # Check course and duration names in table
     tbody_text = table.find("tbody").get_text()
     for word in ["html", "css", "javascript", "2 weeks", "3 weeks", "5 weeks"]:
@@ -114,7 +139,7 @@ def test_table():
                 f"Missing or incorrect course/duration info '{word}' in <tbody>",
                 help="Make sure your table rows contain HTML, CSS, JavaScript, and their respective durations"
             )
-            
+
     # Check total courses in footer
     tfoot_text = tfoot.get_text().lower()
     if "total courses" not in tfoot_text or "3" not in tfoot_text:
@@ -138,10 +163,9 @@ def test_form():
     form = soup.find("form")
     if not form:
         raise check50.Failure("Missing <form> element")
-        
+
     # Check inputs
     inputs = form.find_all("input")
-    # We expect text, email, password inputs
     types = [inp.get("type", "text").lower() for inp in inputs]
     if "email" not in types:
         raise check50.Failure("Missing <input type=\"email\"> inside registration form")
@@ -149,36 +173,53 @@ def test_form():
         raise check50.Failure("Missing <input type=\"password\"> inside registration form")
     if not any(t == "text" for t in types) and not any(t == "" for t in types):
         raise check50.Failure("Missing <input type=\"text\"> for Name inside registration form")
-        
+
     # Check textarea
     textarea = form.find("textarea")
     if not textarea:
         raise check50.Failure(
             "Missing <textarea> inside registration form for feedback/goals"
         )
-        
+
     # Check select and options
     select = form.find("select")
     if not select:
         raise check50.Failure("Missing <select> inside registration form for department")
     options = [opt.get_text().lower().strip() for opt in select.find_all("option")]
     for opt_word in ["frontend", "backend", "full stack"]:
-        # Match full stack or fullstack
         opt_found = any(opt_word in o or opt_word.replace(" ", "") in o for o in options)
         if not opt_found:
             raise check50.Failure(
                 f"Missing <option> for '{opt_word}' in department select list",
                 help="Make sure department select dropdown includes: Frontend, Backend, and Full Stack options"
             )
-            
-    # Check labels
+
+    # Check labels: must exist, have text, and be linked to inputs via for/id
     labels = form.find_all("label")
     if len(labels) < 5:
         raise check50.Failure(
             f"Found {len(labels)} <label> element(s), expected at least 5 (one for each input, textarea, and select)",
             help="Ensure Name, Email, Password, Feedback/Goals, and Department each have their own <label>"
         )
-        
+    for label in labels:
+        if not label.get_text().strip():
+            raise check50.Failure(
+                "Found an empty <label> element in the form",
+                help="Each <label> must contain descriptive text, e.g. <label for=\"name\">Name:</label>"
+            )
+        for_attr = label.get("for")
+        if not for_attr:
+            raise check50.Failure(
+                f"<label> with text '{label.get_text().strip()}' is missing a 'for' attribute",
+                help="Link each <label> to its input using the 'for' attribute matching the input's 'id', e.g. <label for=\"email\">Email:</label>"
+            )
+        # Check that there is an element with matching id in the form
+        if not form.find(id=for_attr):
+            raise check50.Failure(
+                f"<label for=\"{for_attr}\"> does not match any element with id=\"{for_attr}\" in the form",
+                help=f"Add id=\"{for_attr}\" to the input/textarea/select that this label describes"
+            )
+
     # Check submit button
     submit = form.find("button") or form.find("input", type="submit")
     if not submit:
