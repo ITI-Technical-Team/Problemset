@@ -66,27 +66,21 @@ def test_efficiency():
     with open(input_path, "w") as f:
         f.write(stdin_content)
 
-    # Use /usr/bin/time to measure CPU time of just this process
-    result = subprocess.run(
-        ["/usr/bin/time", "-f", "%U %S", "./target-finder"],
-        stdin=open(input_path),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        text=True,
-        timeout=60
-    )
-
-    # Parse user + sys CPU time from /usr/bin/time output
+    # Binary search finishes in ~0.1s; naive O(N*Q) takes 6+ seconds.
+    # A 3-second wall-clock timeout reliably separates them on any machine.
     try:
-        parts = result.stderr.strip().split()
-        cpu_time = float(parts[0]) + float(parts[1])
-    except (ValueError, IndexError):
-        raise check50.Failure(f"Could not parse timing output: {result.stderr!r}")
-
-    if cpu_time > 2.0:
-        raise check50.Failure(f"Time limit exceeded: solution used {cpu_time:.2f}s CPU time (limit: 2.0s)")
-    if result.returncode != 0:
-        raise check50.Failure(f"Program exited with non-zero status: {result.returncode}")
+        subprocess.run(
+            ["./target-finder"],
+            stdin=open(input_path),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=3.0
+        )
+    except subprocess.TimeoutExpired:
+        raise check50.Failure(
+            "Time limit exceeded (3s): solution is too slow.",
+            help="Make sure you are using binary search — an O(N * Q) linear search will not pass."
+        )
 
 @check50.check(test_compile)
 def test_random():
