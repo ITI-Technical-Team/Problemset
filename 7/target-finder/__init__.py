@@ -52,35 +52,23 @@ def test_all_yes():
     """outputs YES when the target exists in the array"""
     check50.run("./target-finder").stdin("5 1\n1 2 3 4 5\n4 9", prompt=False).stdout("YES", regex=False).exit(0)
 
-@check50.check(test_compile, timeout=60)
+@check50.check(test_compile, timeout=10)
 def test_efficiency():
     """solution runs in time on sorted input (O(N * Q) naive will exceed the time limit)"""
-    import os, subprocess
+    import os
     N, Q = 150000, 75000
     elements = " ".join(str(i) for i in range(1, N + 1))
     queries = "\n".join("1 300000" for _ in range(Q))
     stdin_content = f"{N} {Q}\n{elements}\n{queries}"
+    expected_out = "\n".join("NO" for _ in range(Q)) + "\n"
 
     sandbox_dir = os.path.dirname(os.path.abspath("./target-finder"))
     input_path = os.path.join(sandbox_dir, "efficiency_input.txt")
     with open(input_path, "w") as f:
         f.write(stdin_content)
 
-    # Binary search finishes in ~0.1s; naive O(N*Q) takes 6+ seconds.
-    # A 3-second wall-clock timeout reliably separates them on any machine.
-    try:
-        subprocess.run(
-            ["./target-finder"],
-            stdin=open(input_path),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=3.0
-        )
-    except subprocess.TimeoutExpired:
-        raise check50.Failure(
-            "Time limit exceeded (3s): solution is too slow.",
-            help="Make sure you are using binary search — an O(N * Q) linear search will not pass."
-        )
+    check50.run('bash -c "timeout 2 ./target-finder < efficiency_input.txt"').stdout(expected_out, regex=False).exit(0)
+
 
 @check50.check(test_compile)
 def test_random():
