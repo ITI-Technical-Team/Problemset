@@ -62,26 +62,37 @@ def test_function_defined():
     import re
     with open("min-function.cpp", "r") as f:
         code = f.read()
-    
+
     # Remove single-line and multi-line comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
-    
-    # Find all function definitions/declarations
-    matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
-    
-    custom_functions = [name for _, name in matches if name != "main"]
+
+    # Find all non-void function definitions (must return a value)
+    all_matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
+    custom_functions = [(ret, name) for ret, name in all_matches if name != "main"]
+
     if not custom_functions:
-        raise check50.Failure("Could not find a custom function defined (other than main) as required by the problem description.")
+        raise check50.Failure(
+            "Could not find a custom function defined (other than main) as required by the problem description."
+        )
+
+    # Check that the custom function returns a value (not void)
+    for ret_type, fn_name in custom_functions:
+        if ret_type.strip() == "void":
+            raise check50.Failure(
+                f"Your function '{fn_name}' has return type 'void' — it should return the minimum value instead of printing it.",
+                help=f"Change 'void {fn_name}(...)' to 'int {fn_name}(...)' and use 'return' to return the minimum value. Then print it in main()."
+            )
 
     # Verify custom function is called in main
     main_match = re.search(r'\bint\s+main\s*\([^)]*\)\s*\{(.*)\}', code_clean, flags=re.DOTALL)
     if main_match:
         main_body = main_match.group(1)
-        # Match function call like fn_name(...) but not std::min if custom name isn't std::min
-        called = any(re.search(rf'\b{re.escape(fn)}\s*\(', main_body) for fn in custom_functions)
+        called = any(re.search(rf'\b{re.escape(fn)}\s*\(', main_body) for _, fn in custom_functions)
         if not called:
+            fn_name = custom_functions[0][1]
             raise check50.Failure(
-                f"Custom function '{custom_functions[0]}' is defined, but never called in main().",
-                help=f"Make sure you call '{custom_functions[0]}(...)' inside main() instead of using built-in std::min."
+                f"Custom function '{fn_name}' is defined, but never called in main().",
+                help=f"Make sure you call '{fn_name}(...)' inside main() instead of using built-in std::min."
             )
+
