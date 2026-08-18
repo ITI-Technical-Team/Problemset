@@ -58,18 +58,31 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """custom function is defined in print-hello.cpp"""
+    """custom function is defined and called in print-hello.cpp"""
     import re
     with open("print-hello.cpp", "r") as f:
         code = f.read()
-    
+
     # Remove single-line and multi-line comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
-    
+
     # Find all function definitions/declarations
     matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
-    
+
     custom_functions = [name for _, name in matches if name != "main"]
     if not custom_functions:
         raise check50.Failure("Could not find a custom function defined (other than main) as required by the problem description.")
+
+    # Verify custom function is called in main
+    main_match = re.search(r'\bint\s+main\s*\([^)]*\)\s*\{(.*)\}', code_clean, flags=re.DOTALL)
+    if main_match:
+        main_body = main_match.group(1)
+        called = any(re.search(rf'\b{re.escape(fn)}\s*\(', main_body) for fn in custom_functions)
+        if not called:
+            fn_name = custom_functions[0]
+            raise check50.Failure(
+                f"Custom function '{fn_name}' is defined, but never called in main().",
+                help=f"Make sure you call '{fn_name}(...)' inside main()."
+            )
+

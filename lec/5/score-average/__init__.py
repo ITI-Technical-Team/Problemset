@@ -95,17 +95,38 @@ def test_random():
 
 @check50.check(test_compile)
 def test_function_defined():
-    """custom function is defined in score-average.cpp"""
+    """custom function is defined and called in score-average.cpp"""
     with open("score-average.cpp", "r") as f:
         code = f.read()
-    
+
     # Remove single-line and multi-line comments
     code_clean = re.sub(r'//.*', '', code)
     code_clean = re.sub(r'/\*.*?\*/', '', code_clean, flags=re.DOTALL)
-    
+
     # Find all function definitions/declarations
-    matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
-    
-    custom_functions = [name for _, name in matches if name != "main"]
+    all_matches = re.findall(r'\b(int|long\s+long|void|double|float|std::string|string)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{', code_clean)
+    custom_functions = [(ret, name) for ret, name in all_matches if name != "main"]
+
     if not custom_functions:
         raise check50.Failure("Could not find a custom function defined (other than main) to compute the average as required by the problem description.")
+
+    # Check that the custom function returns a value (not void)
+    for ret_type, fn_name in custom_functions:
+        if ret_type.strip() == "void":
+            raise check50.Failure(
+                f"Your function '{fn_name}' has return type 'void' — it should return the average value instead of printing inside the function.",
+                help=f"Change 'void {fn_name}(...)' to return a numeric type (e.g. double or float) and use 'return'. Then print the result in main()."
+            )
+
+    # Verify custom function is called in main
+    main_match = re.search(r'\bint\s+main\s*\([^)]*\)\s*\{(.*)\}', code_clean, flags=re.DOTALL)
+    if main_match:
+        main_body = main_match.group(1)
+        called = any(re.search(rf'\b{re.escape(fn)}\s*\(', main_body) for _, fn in custom_functions)
+        if not called:
+            fn_name = custom_functions[0][1]
+            raise check50.Failure(
+                f"Custom function '{fn_name}' is defined, but never called in main().",
+                help=f"Make sure you call '{fn_name}(...)' inside main() and print its return value."
+            )
+
