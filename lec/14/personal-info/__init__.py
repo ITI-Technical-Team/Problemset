@@ -37,7 +37,7 @@ def exists():
 
 @check50.check(exists)
 def has_elements():
-    """index.html contains heading, paragraph, button, and <script> block"""
+    """index.html contains heading, paragraph with id, button with id and text, and <script> block"""
     _check_tag_closed("index.html", "html")
     _check_tag_closed("index.html", "body")
     _check_tag_closed("index.html", "script")
@@ -45,28 +45,38 @@ def has_elements():
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Check for heading
+    # Check for non-empty heading
     heading = soup.find(re.compile(r'^h[1-6]$', re.I))
-    if not heading:
+    if not heading or not heading.get_text().strip():
         raise check50.Failure(
-            "Missing heading tag",
-            help="Add a heading tag like <h1>Personal Info</h1> to index.html"
+            "Missing or empty heading tag",
+            help="Add a heading tag with text like <h1>Personal Profile</h1> to index.html"
         )
 
-    # Check for paragraph
+    # Check for paragraph with id
     p = soup.find("p")
     if not p:
         raise check50.Failure(
             "Missing paragraph tag",
-            help="Add a <p> tag to index.html to display the personal information"
+            help="Add a <p id=\"info\"></p> tag to index.html to display personal information"
+        )
+    if not p.get("id"):
+        raise check50.Failure(
+            "Paragraph tag is missing an 'id' attribute (e.g. id=\"info\")",
+            help="Add id=\"info\" to your <p> tag so JavaScript can select it with document.getElementById(\"info\")"
         )
 
-    # Check for button
+    # Check for button with id and text
     btn = soup.find("button")
-    if not btn:
+    if not btn or not btn.get_text().strip():
         raise check50.Failure(
-            "Missing button tag",
-            help="Add a <button> tag to index.html"
+            "Missing or empty button tag",
+            help="Add a <button id=\"welcome-btn\">Change Message</button> with text to index.html"
+        )
+    if not btn.get("id"):
+        raise check50.Failure(
+            "Button tag is missing an 'id' attribute (e.g. id=\"welcome-btn\")",
+            help="Add id=\"welcome-btn\" to your <button> tag so JavaScript can attach a click handler"
         )
 
     if not soup.find("script"):
@@ -78,88 +88,130 @@ def has_elements():
 
 @check50.check(has_elements)
 def checks_variables():
-    """JavaScript declares name, age, and favorite color variables"""
+    """JavaScript declares AND initializes name, age, and favorite color variables"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_raw = soup.find("script").string or ""
     js_clean = _strip_js_comments(js_raw).lower()
 
-    if not re.search(r'\b(let|const|var)\s+name\b', js_clean):
+    if not re.search(r'\b(let|const|var)\s+name\s*=\s*[^;\n]+', js_clean):
         raise check50.Failure(
-            "Missing name variable declaration",
-            help="Declare a variable named 'name' (e.g. let name = 'Alice';)"
+            "Missing or uninitialized 'name' variable",
+            help="Declare and initialize a variable named 'name' with a value (e.g. let name = 'Alice';)"
         )
 
-    if not re.search(r'\b(let|const|var)\s+age\b', js_clean):
+    if not re.search(r'\b(let|const|var)\s+age\s*=\s*[^;\n]+', js_clean):
         raise check50.Failure(
-            "Missing age variable declaration",
-            help="Declare a variable named 'age' (e.g. let age = 20;)"
+            "Missing or uninitialized 'age' variable",
+            help="Declare and initialize a variable named 'age' with a number (e.g. let age = 20;)"
         )
 
-    if not re.search(r'\b(let|const|var)\s+favoritecolor\b', js_clean) and not re.search(r'\b(let|const|var)\s+favorite_color\b', js_clean):
+    has_color = (
+        re.search(r'\b(let|const|var)\s+favoritecolor\s*=\s*[^;\n]+', js_clean) or
+        re.search(r'\b(let|const|var)\s+favorite_color\s*=\s*[^;\n]+', js_clean)
+    )
+    if not has_color:
         raise check50.Failure(
-            "Missing favoriteColor variable declaration",
-            help="Declare a variable named 'favoriteColor' or 'favorite_color'"
+            "Missing or uninitialized 'favoriteColor' variable",
+            help="Declare and initialize a variable named 'favoriteColor' with a color string (e.g. let favoriteColor = 'Blue';)"
         )
 
 
 @check50.check(checks_variables)
+def test_page_load_info():
+    """Page load displays personal info in paragraph"""
+    html = _read("index.html")
+    soup = BeautifulSoup(html, "html.parser")
+    p = soup.find("p")
+    p_id = p.get("id", "info") if p else "info"
+    js_code = soup.find("script").string or ""
+
+    mock_env = f"""
+let paragraphText = "";
+let paragraphMock = {{
+    get textContent() {{ return paragraphText; }},
+    set textContent(v) {{ paragraphText = String(v); }},
+    get innerText() {{ return paragraphText; }},
+    set innerText(v) {{ paragraphText = String(v); }},
+    get innerHTML() {{ return paragraphText; }},
+    set innerHTML(v) {{ paragraphText = String(v); }}
+}};
+let buttonMock = {{
+    addEventListener: () => {{}},
+    set onclick(cb) {{}}
+}};
+global.window = {{}};
+global.document = {{
+    getElementById: (id) => {{
+        if (id === "{p_id}") return paragraphMock;
+        return buttonMock;
+    }},
+    querySelector: (s) => (s === "p" ? paragraphMock : buttonMock)
+}};
+"""
+    full_js = mock_env + js_code + "\nconsole.log(paragraphText);"
+    try:
+        res = subprocess.run(["node", "-e", full_js], capture_output=True, text=True)
+    except FileNotFoundError:
+        return
+
+    out = res.stdout.strip()
+    if not out:
+        raise check50.Failure(
+            "Paragraph is empty when the page loads",
+            help="Set the paragraph's textContent to your personal info (e.g. document.getElementById('info').textContent = 'My name is ...') when the page loads."
+        )
+
+
+@check50.check(test_page_load_info)
 def button_click_logic():
     """Button click updates paragraph text to 'Welcome to JavaScript!'"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
-    js_code = soup.find("script").string or ""
-    button = soup.find("button")
-    onclick_attr = button.get("onclick") if button else None
+    p = soup.find("p")
+    btn = soup.find("button")
+    p_id = p.get("id", "info") if p else "info"
+    btn_id = btn.get("id", "welcome-btn") if btn else "welcome-btn"
 
-    mock_env = r"""
+    js_code = soup.find("script").string or ""
+    onclick_attr = btn.get("onclick") if btn else None
+
+    mock_env = f"""
 let registeredClick = null;
 let paragraphText = "";
-let paragraphMock = {
-    get textContent() { return paragraphText; },
-    set textContent(v) { paragraphText = v; },
-    get innerText() { return paragraphText; },
-    set innerText(v) { paragraphText = v; },
-    get innerHTML() { return paragraphText; },
-    set innerHTML(v) { paragraphText = v; }
-};
-let buttonMock = {
-    addEventListener: (event, cb) => {
+let paragraphMock = {{
+    get textContent() {{ return paragraphText; }},
+    set textContent(v) {{ paragraphText = String(v); }},
+    get innerText() {{ return paragraphText; }},
+    set innerText(v) {{ paragraphText = String(v); }},
+    get innerHTML() {{ return paragraphText; }},
+    set innerHTML(v) {{ paragraphText = String(v); }}
+}};
+let buttonMock = {{
+    addEventListener: (event, cb) => {{
         if (event === "click") registeredClick = cb;
-    },
-    set onclick(cb) {
+    }},
+    set onclick(cb) {{
         registeredClick = cb;
-    }
-};
+    }}
+}};
 
-global.window = {};
-global.document = {
-    getElementById: (id) => {
-        if (id.toLowerCase().includes("info") || id.toLowerCase().includes("para") || id.toLowerCase().includes("personal")) {
-            return paragraphMock;
-        }
-        if (id.toLowerCase().includes("btn") || id.toLowerCase().includes("button") || id.toLowerCase().includes("click") || id.toLowerCase().includes("welcome")) {
-            return buttonMock;
-        }
-        return {
-            addEventListener: (event, cb) => { if (event === "click") registeredClick = cb; },
-            set onclick(cb) { registeredClick = cb; },
-            get textContent() { return paragraphText; },
-            set textContent(v) { paragraphText = v; },
-            get innerText() { return paragraphText; },
-            set innerText(v) { paragraphText = v; }
-        };
-    },
-    querySelector: (selector) => {
-        if (selector === "p") return paragraphMock;
-        if (selector === "button") return buttonMock;
-        return paragraphMock;
-    }
-};
+global.window = {{}};
+global.document = {{
+    getElementById: (id) => {{
+        if (id === "{p_id}") return paragraphMock;
+        if (id === "{btn_id}") return buttonMock;
+        return null;
+    }},
+    querySelector: (selector) => {{
+        if (selector === "p" || selector === "#{p_id}") return paragraphMock;
+        if (selector === "button" || selector === "#{btn_id}") return buttonMock;
+        return null;
+    }}
+}};
 """
 
     if onclick_attr:
-        # If they used inline onclick, e.g. onclick="myFunc()"
         func_call = onclick_attr.strip()
         test_harness = f"""
 {js_code}
@@ -181,7 +233,6 @@ console.log("PASS");
 if (registeredClick) {{
     registeredClick();
 }} else {{
-    // Try to trigger a click on document button elements directly if registered manually
     console.log("NO_CLICK_LISTENER");
     process.exit(1);
 }}

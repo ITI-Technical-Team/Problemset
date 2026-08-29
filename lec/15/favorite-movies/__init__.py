@@ -24,12 +24,10 @@ def exists():
 
 @check50.check(exists)
 def checks_movies_array():
-    """JavaScript defines an array containing 5 movies and updates it using two methods"""
+    """JavaScript defines an array containing 5 movies, logs original & updated arrays, and uses two methods"""
     code = _read("favorite-movies.js")
     clean = _strip_js_comments(code)
 
-    # We will run a Node wrapper to execute favorite-movies.js in a VM context
-    # and verify its outputs.
     wrapper = r"""
 const fs = require('fs');
 const vm = require('vm');
@@ -52,30 +50,52 @@ try {
     process.exit(1);
 }
 
-// Find any arrays defined in context or logs
-let arrays = [];
+// Find any movie arrays declared in context or logged
+let foundArray = null;
 for (const key in context) {
     if (Array.isArray(context[key])) {
-        arrays.push(context[key]);
+        foundArray = context[key];
+        break;
     }
 }
 
-// Check logged values for arrays
+// Check logged arrays
+let arrayLogs = [];
 for (const log of logs) {
     for (const arg of log) {
         if (Array.isArray(arg)) {
-            arrays.push(arg);
+            arrayLogs.push(arg);
+            if (!foundArray) foundArray = arg;
+        } else if (typeof arg === 'string' && (arg.includes('[') || arg.includes(','))) {
+            arrayLogs.push(arg);
         }
     }
 }
 
-if (arrays.length === 0) {
+if (!foundArray && arrayLogs.length === 0) {
     console.log("FAIL_NO_ARRAY");
     process.exit(1);
 }
 
-// Check if any array initially had 5 movies
-// Since the student might have modified the array in place, we inspect context and logs.
+// Inspect initial array in source code before methods
+const arrayMatch = code.match(/\[([\s\S]*?)\]/);
+if (!arrayMatch) {
+    console.log("FAIL_NO_ARRAY");
+    process.exit(1);
+}
+
+const rawElements = arrayMatch[1].split(',').map(s => s.replace(/['"\s\n\r]/g, '').trim()).filter(Boolean);
+if (rawElements.length < 5) {
+    console.log("FAIL_INITIAL_COUNT");
+    process.exit(1);
+}
+
+// Check that console.log printed the array (or logged array values) at least twice
+if (arrayLogs.length < 2) {
+    console.log("FAIL_LOGS_COUNT");
+    process.exit(1);
+}
+
 console.log("PASS");
 """
 
@@ -85,7 +105,17 @@ console.log("PASS");
         if out.startswith("FAIL_NO_ARRAY"):
             raise check50.Failure(
                 "No movie array found",
-                help="Make sure you declare an array containing 5 movies (e.g. let movies = [...];) and print it"
+                help="Declare an array containing 5 movie titles (e.g. let movies = ['Inception', 'The Dark Knight', 'Interstellar', 'The Matrix', 'Avatar'];)"
+            )
+        elif out.startswith("FAIL_INITIAL_COUNT"):
+            raise check50.Failure(
+                "Initial movie array contains fewer than 5 movies",
+                help="Initialize your movie array with at least 5 movie title strings."
+            )
+        elif out.startswith("FAIL_LOGS_COUNT"):
+            raise check50.Failure(
+                "Missing console log output of movie array",
+                help="Make sure to log the movie array using console.log(movies) both before and after updating it."
             )
         elif out.startswith("ERROR_EXEC"):
             msg = out.split(":", 1)[1]
@@ -93,11 +123,18 @@ console.log("PASS");
         else:
             raise check50.Failure("JavaScript execution error", help=out or res.stderr.strip())
 
-    # Count array method usage (e.g. .push(, .pop(, .shift(, .unshift(, .splice(, .slice(, .concat(, .reverse()
+    # Count array method usage
     methods = ["push", "pop", "shift", "unshift", "splice", "slice", "concat", "reverse"]
     methods_used = 0
     for m in methods:
         if f".{m}(" in clean or f".{m} (" in clean:
+            # For push/unshift, check that it's not empty string ""
+            if m in ["push", "unshift"]:
+                if re.search(r'\.' + m + r'\(\s*[\'"]\s*[\'"]\s*\)', clean):
+                    raise check50.Failure(
+                        f"Array method .{m}() was called with an empty string",
+                        help=f"Pass a valid movie title string when calling .{m}() (e.g. movies.push('The Godfather');)"
+                    )
             methods_used += 1
 
     if methods_used < 2:
