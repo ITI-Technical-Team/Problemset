@@ -84,6 +84,8 @@ def get_custom_block_body_blocks(definition_block_id, blocks):
 
 def is_action_block(block):
     opcode = block.get("opcode", "")
+    if opcode == "procedures_call":
+        return True
     if opcode.startswith("procedures_"):
         return False
     if opcode in ("control_if", "control_if_else", "control_repeat", "control_forever", "control_repeat_until"):
