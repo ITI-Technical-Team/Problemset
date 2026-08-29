@@ -21,6 +21,12 @@ def _check_tag_closed(filename, tag):
         )
 
 
+def _strip_js_comments(code):
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
+
+
 # ─── existence & structure ────────────────────────────────────────────────────
 
 @check50.check()
@@ -31,7 +37,7 @@ def exists():
 
 @check50.check(exists)
 def has_elements():
-    """index.html contains three paragraphs, a button, and a script tag"""
+    """index.html contains three non-empty paragraphs, a non-empty button, and a script tag"""
     _check_tag_closed("index.html", "html")
     _check_tag_closed("index.html", "body")
     _check_tag_closed("index.html", "script")
@@ -39,20 +45,20 @@ def has_elements():
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Check for paragraphs
-    paras = soup.find_all("p")
+    # Check for paragraphs with text
+    paras = [p for p in soup.find_all("p") if p.get_text().strip()]
     if len(paras) < 3:
         raise check50.Failure(
-            "Fewer than three paragraph tags found",
-            help="Add at least three <p> elements to index.html"
+            f"Found {len(paras)} non-empty paragraph tag(s), expected at least 3",
+            help="Add at least three <p> elements with text content to index.html"
         )
 
-    # Check for button
+    # Check for non-empty button
     btn = soup.find("button")
-    if not btn:
+    if not btn or not btn.get_text().strip():
         raise check50.Failure(
-            "Missing button tag",
-            help="Add a <button> tag to index.html"
+            "Missing or empty button tag",
+            help="Add a <button>Change Paragraphs</button> tag with text to index.html"
         )
 
     if not soup.find("script"):
@@ -64,15 +70,16 @@ def has_elements():
 
 @check50.check(has_elements)
 def checks_query_selector_all():
-    """JavaScript code uses querySelectorAll to select the paragraphs"""
+    """JavaScript code uses querySelectorAll in active code to select the paragraphs"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_raw = soup.find("script").string or ""
+    js_clean = _strip_js_comments(js_raw)
 
-    if "querySelectorAll" not in js_raw:
+    if "querySelectorAll" not in js_clean:
         raise check50.Failure(
-            "querySelectorAll not found in script",
-            help="Ensure you select all paragraphs using document.querySelectorAll('p')"
+            "querySelectorAll not found in active script",
+            help="Ensure you select all paragraphs in active JavaScript code using document.querySelectorAll('p')"
         )
 
 
@@ -108,7 +115,6 @@ let p3Mock = createPMock(3, () => p3Text, (v) => p3Text = v);
 
 let paragraphsArray = [p1Mock, p2Mock, p3Mock];
 
-// Mock forEach and indexing on NodeList
 let paragraphsMock = {
     length: 3,
     0: p1Mock,
@@ -141,6 +147,10 @@ global.document = {
     },
     querySelector: (selector) => {
         if (selector === "button" || selector.includes("btn") || selector.includes("change")) return buttonMock;
+        return p1Mock;
+    },
+    getElementById: (id) => {
+        if (id.toLowerCase().includes("btn") || id.toLowerCase().includes("button") || id.toLowerCase().includes("change")) return buttonMock;
         return p1Mock;
     }
 };
