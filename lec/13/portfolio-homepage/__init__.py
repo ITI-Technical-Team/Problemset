@@ -36,7 +36,7 @@ def test_stylesheet_link():
 
 @check50.check(exists)
 def test_html_structure():
-    """index.html contains required elements (container div, header, skills section, projects section, contact link)"""
+    """index.html contains required non-empty elements (container div, header, skills section, projects section, contact link)"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
@@ -56,37 +56,42 @@ def test_html_structure():
     ul = container.find("ul")
     if not ul:
         raise check50.Failure("Missing unordered list <ul> inside container")
-    items = ul.find_all("li")
+    items = [li for li in ul.find_all("li") if li.get_text().strip()]
     if len(items) < 5:
         raise check50.Failure(
-            f"Found {len(items)} item(s) in unordered list, expected at least 5 skills",
-            help="Add at least 5 skills as <li> items inside your <ul> list"
+            f"Found {len(items)} non-empty item(s) in unordered list, expected at least 5 skills",
+            help="Add at least 5 skills as <li> items with text inside your <ul> list"
         )
         
     # Check projects section
-    paragraphs = container.find_all("p")
+    paragraphs = [p for p in container.find_all("p") if p.get_text().strip()]
     if len(paragraphs) < 2:
-        # One in header, one in projects, etc.
         p_texts = [p.get_text().lower() for p in paragraphs]
         has_proj_p = any("project" in t or "web" in t or "work" in t for t in p_texts)
         if not has_proj_p:
             raise check50.Failure(
-                "Missing paragraph <p> describing your projects inside container"
+                "Missing non-empty paragraph <p> describing your projects inside container"
             )
             
     # Check contact link
     link = container.find("a")
     if not link or not link.get("href", "").strip():
-        raise check50.Failure("Missing Contact Me hyperlink <a> inside container")
+        raise check50.Failure("Missing Contact Me hyperlink <a> or missing href attribute inside container")
+    if not link.get_text().strip():
+        raise check50.Failure(
+            "Found an empty Contact Me hyperlink <a> inside container",
+            help="Add visible text to your contact link <a> tag"
+        )
 
 
 @check50.check(exists)
 def test_css_styling():
-    """style.css contains all required CSS selectors and properties"""
-    css = _read("style.css").lower()
+    """style.css contains all required CSS selectors and active properties"""
+    raw_css = _read("style.css")
+    # Strip CSS comments /* ... */ to prevent commented-out styles from passing
+    css = re.sub(r'/\*.*?\*/', '', raw_css, flags=re.DOTALL).lower()
     
     # Check selector types
-    # 1. Element selector (e.g. body, header, h1, etc.)
     has_element_sel = any(sel in css for sel in ["body", "h1", "h2", "p", "ul", "li", "header", "a"])
     if not has_element_sel:
         raise check50.Failure("style.css is missing element selectors (e.g., body, h1)")
@@ -107,18 +112,18 @@ def test_css_styling():
         
     # Check colors (Hex, RGB, or Name)
     if "color" not in css and "background" not in css:
-        raise check50.Failure("style.css is missing color properties")
+        raise check50.Failure("style.css is missing active color properties")
         
     # Check typography properties
     for prop in ["font-family", "font-size", "font-weight", "line-height", "letter-spacing", "text-align"]:
         if prop not in css:
-            raise check50.Failure(f"style.css is missing typography property '{prop}'")
+            raise check50.Failure(f"style.css is missing active typography property '{prop}'")
             
     # Check container box model properties
     for prop in ["width", "max-width", "margin", "padding", "background", "border"]:
         if prop not in css:
             raise check50.Failure(
-                f"style.css is missing box model/layout property '{prop}' in CSS styles"
+                f"style.css is missing active box model/layout property '{prop}' in CSS styles"
             )
             
     # Check hover selector
@@ -128,4 +133,4 @@ def test_css_styling():
             help="Style your link hover state using `:hover` selector"
         )
     if "text-decoration" not in css:
-        raise check50.Failure("style.css is missing text-decoration styling in hover rule")
+        raise check50.Failure("style.css is missing active text-decoration styling in hover rule")
