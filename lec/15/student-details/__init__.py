@@ -24,21 +24,21 @@ def exists():
 
 @check50.check(exists)
 def checks_student_object():
-    """JavaScript defines the student object and modifies its age"""
+    """JavaScript defines the student object, logs it before & after, and modifies its age"""
     code = _read("student-details.js")
     clean = _strip_js_comments(code)
 
-    # We will run a Node wrapper to execute student-details.js in a VM context
-    # and inspect the student object properties.
     wrapper = r"""
 const fs = require('fs');
 const vm = require('vm');
 const code = fs.readFileSync('student-details.js', 'utf8');
 
 let logs = [];
+let rawLogs = [];
 const context = {
     console: {
         log: (...args) => {
+            rawLogs.push(args);
             logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
         }
     }
@@ -71,27 +71,33 @@ try {
     process.exit(1);
 }
 
-// Check properties (case-insensitive keys check)
+// Check properties
 const keys = Object.keys(student).map(k => k.toLowerCase());
 if (!keys.includes("name") || !keys.includes("age") || !keys.includes("department")) {
     console.log("FAIL_PROPERTIES_MISSING");
     process.exit(1);
 }
 
-// Find key names
 const nameKey = Object.keys(student).find(k => k.toLowerCase() === "name");
 const ageKey = Object.keys(student).find(k => k.toLowerCase() === "age");
 const deptKey = Object.keys(student).find(k => k.toLowerCase() === "department");
 
-if (typeof student[nameKey] !== 'string' || typeof student[deptKey] !== 'string' || typeof student[ageKey] !== 'number') {
+if (typeof student[nameKey] !== 'string' || !student[nameKey].trim() || typeof student[deptKey] !== 'string' || !student[deptKey].trim() || typeof student[ageKey] !== 'number') {
     console.log("FAIL_TYPES");
     process.exit(1);
 }
 
-// Verify that logs are present (excluding the STUDENT_CHECK log)
-const studentLogs = logs.filter(l => !l.startsWith('STUDENT_CHECK'));
+// Check that console.log actually logged the student object (or its keys/values) at least twice
+const studentLogs = rawLogs.filter(args => {
+    return args.some(arg => {
+        if (typeof arg === 'object' && arg !== null) return true;
+        const str = String(arg);
+        return str.includes('{') || str.includes(student[nameKey]) || str.includes(student[deptKey]);
+    });
+});
+
 if (studentLogs.length < 2) {
-    console.log("FAIL_LOGS_COUNT");
+    console.log("FAIL_OBJECT_NOT_LOGGED");
     process.exit(1);
 }
 
@@ -113,13 +119,13 @@ console.log("PASS");
             )
         elif out.startswith("FAIL_TYPES"):
             raise check50.Failure(
-                "Incorrect property types",
-                help="Ensure 'name' and 'department' are strings, and 'age' is a number"
+                "Incorrect property values or types",
+                help="Ensure 'name' and 'department' are non-empty strings, and 'age' is a number"
             )
-        elif out.startswith("FAIL_LOGS_COUNT"):
+        elif out.startswith("FAIL_OBJECT_NOT_LOGGED"):
             raise check50.Failure(
-                "Missing console output",
-                help="Make sure you print the student object information to the console"
+                "Student object was not displayed in console logs",
+                help="Make sure you call console.log(student) to display the student object both before and after updating its age."
             )
         elif out.startswith("ERROR_EXEC"):
             msg = out.split(":", 1)[1]
@@ -127,8 +133,7 @@ console.log("PASS");
         else:
             raise check50.Failure("JavaScript execution error", help=out or res.stderr.strip())
 
-    # We also check that the student's age was modified in the code file.
-    # Checks for student.age = ... or student['age'] = ...
+    # Verify student.age was modified in code
     if not re.search(r'student(?:\.age|\[\s*[\'"]age[\'"]\s*\])\s*=', clean):
         raise check50.Failure(
             "Student age was not modified",
