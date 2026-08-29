@@ -36,7 +36,7 @@ def test_stylesheet_link():
 
 @check50.check(exists)
 def test_html_structure():
-    """index.html contains required non-empty elements (container div, header, skills section, projects section, contact link)"""
+    """index.html contains required non-empty elements (container div, header, 2 section elements, skills list, projects paragraph, contact link)"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
@@ -51,6 +51,14 @@ def test_html_structure():
     header = container.find("header") or container.find(id="header")
     if not header:
         raise check50.Failure("Missing <header> element inside container")
+
+    # Check sections
+    sections = container.find_all("section")
+    if len(sections) < 2:
+        raise check50.Failure(
+            f"Found {len(sections)} <section> element(s) inside container, expected at least 2",
+            help="Wrap your Skills section and Projects section inside `<section>` tags"
+        )
         
     # Check skills list
     ul = container.find("ul")
