@@ -112,7 +112,7 @@ def test_nav():
 
 @check50.check(has_doctype)
 def test_about_section():
-    """index.html has About section with a <div> containing photo, 2 paragraphs, and formatting elements (strong, em, b, i, span, br)"""
+    """index.html has About section with a <div> containing valid photo, 2 non-empty paragraphs, and non-empty formatting elements (strong, em, b, i, span, br)"""
     _check_tag_closed("index.html", "section")
     _check_tag_closed("index.html", "div")
     _check_tag_closed("index.html", "strong")
@@ -153,19 +153,36 @@ def test_about_section():
             help="Add a src attribute to your <img> tag pointing to your photo, e.g. <img src=\"photo.jpg\" alt=\"My Photo\">"
         )
 
-    paragraphs = div.find_all("p")
-    if len(paragraphs) < 2:
+    valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".avif")
+    src_clean = src.split("?")[0].split("#")[0].lower()
+    is_img = (
+        src.startswith("data:image/") or
+        any(src_clean.endswith(ext) for ext in valid_exts) or
+        any(ext in src_clean for ext in valid_exts)
+    )
+    if not is_img or src.endswith("/") or re.search(r'\.(html?|php|asp|jsp)\b', src, re.I):
         raise check50.Failure(
-            f"Found {len(paragraphs)} paragraph(s) in About section's <div>, expected at least 2",
-            help="Add at least two paragraphs describing yourself inside the About section's <div>"
+            f"The <img> 'src' attribute '{src}' inside About section does not point to a valid image file",
+            help="Make sure src points to an image file (e.g. photo.jpg, avatar.png, or a valid image URL)."
         )
 
-    # Check formatting tags
-    for tag in ["strong", "em", "b", "i", "span", "br"]:
-        if not div.find(tag):
+    paragraphs = [p for p in div.find_all("p") if p.get_text().strip()]
+    if len(paragraphs) < 2:
+        raise check50.Failure(
+            f"Found {len(paragraphs)} non-empty paragraph(s) in About section's <div>, expected at least 2",
+            help="Add at least two paragraphs with descriptive text inside the About section's <div>"
+        )
+
+    # Check formatting tags: must exist and contain non-empty text
+    for tag in ["strong", "em", "b", "i", "span"]:
+        elem = div.find(tag)
+        if not elem or not elem.get_text().strip():
             raise check50.Failure(
-                f"Missing <{tag}> tag inside the About section's <div> text"
+                f"Missing or empty <{tag}> element inside the About section's <div>",
+                help=f"Add non-empty text inside <{tag}> (e.g. <{tag}>text</{tag}>)"
             )
+    if not div.find("br"):
+        raise check50.Failure("Missing <br> element inside the About section's <div>")
 
 
 @check50.check(has_doctype)
@@ -188,25 +205,25 @@ def test_skills_section():
     ul = skills_section.find("ul")
     if not ul:
         raise check50.Failure("Missing unordered list <ul> inside Skills section")
-    ul_items = ul.find_all("li")
+    ul_items = [li for li in ul.find_all("li") if li.get_text().strip()]
     if len(ul_items) < 5:
         raise check50.Failure(
-            f"Expected at least 5 skills as <li> items in <ul>, found {len(ul_items)}"
+            f"Expected at least 5 non-empty skills as <li> items in <ul>, found {len(ul_items)}"
         )
 
     ol = skills_section.find("ol")
     if not ol:
         raise check50.Failure("Missing ordered list <ol> inside Skills section")
-    ol_items = ol.find_all("li")
+    ol_items = [li for li in ol.find_all("li") if li.get_text().strip()]
     if len(ol_items) < 2:
         raise check50.Failure(
-            f"Expected steps to become a web developer as <li> items in <ol>, found {len(ol_items)}"
+            f"Expected non-empty steps to become a web developer as <li> items in <ol>, found {len(ol_items)}"
         )
 
 
 @check50.check(has_doctype)
 def test_projects_section():
-    """index.html has Projects section containing a table with the specified project statuses and tfoot Total Projects: 3"""
+    """index.html has Projects section containing a table with non-empty cells, specified project statuses, and tfoot Total Projects: 3"""
     _check_tag_closed("index.html", "table")
     _check_tag_closed("index.html", "thead")
     _check_tag_closed("index.html", "tbody")
@@ -244,13 +261,32 @@ def test_projects_section():
                 help="Make sure each <th> contains text, e.g. <th>Project</th>"
             )
 
-    if not table.find("tbody"):
+    tbody = table.find("tbody")
+    if not tbody:
         raise check50.Failure("Missing <tbody> element inside Projects table")
+
     tfoot = table.find("tfoot")
     if not tfoot:
         raise check50.Failure("Missing <tfoot> element inside Projects table")
 
-    tbody_text = table.find("tbody").get_text().lower()
+    rows = tbody.find_all("tr")
+    if not rows:
+        raise check50.Failure("Missing <tr> data rows inside <tbody> of Projects table")
+    for i, tr in enumerate(rows, 1):
+        td_cells = tr.find_all("td")
+        if len(td_cells) < 3:
+            raise check50.Failure(
+                f"Row {i} in <tbody> has {len(td_cells)} column(s), expected at least 3",
+                help="Make sure each project row has 3 columns: Project Name, Technology/Link, and Status"
+            )
+        for j, td in enumerate(td_cells, 1):
+            if not td.get_text().strip() and not td.find("a"):
+                raise check50.Failure(
+                    f"Found empty <td> cell in column {j} of row {i} in Projects table",
+                    help="Make sure every table cell (including Column 2 Technology/Link) contains text or links"
+                )
+
+    tbody_text = tbody.get_text().lower()
     for word in ["portfolio", "calculator", "registration form", "completed", "in progress"]:
         if word not in tbody_text:
             raise check50.Failure(
@@ -350,17 +386,33 @@ def test_contact_section():
 
 @check50.check(has_doctype)
 def test_footer():
-    """index.html has a <footer> with a copyright message"""
+    """index.html has a <footer> with a copyright message including year and name"""
     _check_tag_closed("index.html", "footer")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     footer = soup.find("footer")
     if not footer:
         raise check50.Failure("Missing <footer> element")
-    text = footer.get_text().lower()
+    text = footer.get_text().strip().lower()
     raw = str(footer).lower()
     has_sym = "copyright" in text or "©" in text or "&copy;" in raw or "&#169;" in raw
     if not has_sym:
         raise check50.Failure(
-            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)"
+            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)",
+            help="Add a copyright message inside <footer> using &copy; or © symbol"
         )
+
+    has_year = bool(re.search(r'\b(20\d{2}|19\d{2})\b', text))
+    if not has_year:
+        raise check50.Failure(
+            "<footer> is missing the copyright year (e.g. 2026)",
+            help="Include the year inside your <footer>: &copy; 2026 Your Name"
+        )
+
+    clean_text = re.sub(r'copyright|©|&copy;|&#169;|20\d{2}|19\d{2}', '', text).strip()
+    if len(clean_text) < 2:
+        raise check50.Failure(
+            "<footer> is missing your name or copyright holder text",
+            help="Include your name inside <footer>: &copy; 2026 Your Name"
+        )
+
