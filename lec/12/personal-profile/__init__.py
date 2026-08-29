@@ -70,7 +70,7 @@ def test_header():
 
 @check50.check(has_doctype)
 def test_nav():
-    """index.html has <nav> containing at least 3 anchor links"""
+    """index.html has <nav> containing at least 3 non-empty anchor links (with href)"""
     _check_tag_closed("index.html", "nav")
     _check_tag_closed("index.html", "a")
     html = _read("index.html")
@@ -86,10 +86,22 @@ def test_nav():
             help="Add at least 3 links (e.g. Home, About, Contact) inside <nav> using <a> tags"
         )
 
+    for link in links:
+        if not link.get("href"):
+            raise check50.Failure(
+                f"<a> tag with text '{link.get_text().strip()}' inside <nav> is missing an 'href' attribute",
+                help="Each <a> tag in your navigation must specify a link target using href=\"...\""
+            )
+        if not link.get_text().strip():
+            raise check50.Failure(
+                "Found an empty <a> tag inside <nav>",
+                help="Each <a> tag inside <nav> must contain visible link text (e.g. <a href=\"#about\">About</a>)"
+            )
+
 
 @check50.check(has_doctype)
 def test_about_section():
-    """index.html has <section> with an <img> and a paragraph containing strong, em, span, and br elements"""
+    """index.html has <section> with a valid <img> and a paragraph containing non-empty strong, em, span, and br elements"""
     _check_tag_closed("index.html", "section")
     _check_tag_closed("index.html", "strong")
     _check_tag_closed("index.html", "em")
@@ -97,7 +109,6 @@ def test_about_section():
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
-    # Try to find a section that contains an img, or any section
     sections = soup.find_all("section")
     if not sections:
         raise check50.Failure("Missing <section> element in index.html")
@@ -115,34 +126,64 @@ def test_about_section():
         )
         
     img = img_section.find("img")
-    if not img.get("src", "").strip():
+    src = img.get("src", "").strip()
+    if not src:
         raise check50.Failure(
             "The <img> tag is missing a 'src' attribute",
             help="Make sure you specify a source file/URL for your <img> tag using src=\"...\""
         )
-        
-    # Check for formatting elements in the section or its paragraphs
-    p = img_section.find("p")
-    if not p:
+
+    # Check that src points to an image file, not a web directory / html page
+    valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".avif")
+    src_clean = src.split("?")[0].split("#")[0].lower()
+    is_img = (
+        src.startswith("data:image/") or
+        any(src_clean.endswith(ext) for ext in valid_exts) or
+        any(ext in src_clean for ext in valid_exts)
+    )
+    if not is_img or src.endswith("/") or re.search(r'\.(html?|php|asp|jsp)\b', src, re.I):
         raise check50.Failure(
-            "Missing paragraph introducing yourself in the about <section>",
+            f"The <img> 'src' attribute '{src}' does not point to a valid image file",
+            help="Make sure src points to an image file (e.g. photo.jpg, avatar.png, or a valid image URL)."
+        )
+
+    # Check for paragraph in about section
+    p = img_section.find("p")
+    if not p or not p.get_text().strip():
+        raise check50.Failure(
+            "Missing or empty paragraph introducing yourself in the about <section>",
             help="Add a paragraph of text inside the <section> using <p>"
         )
         
-    # Check formatting elements
-    if not img_section.find("strong"):
-        raise check50.Failure("Missing <strong> element in the about section")
-    if not img_section.find("em"):
-        raise check50.Failure("Missing <em> element in the about section")
-    if not img_section.find("span"):
-        raise check50.Failure("Missing <span> element in the about section")
+    # Check formatting elements inside section
+    strong = img_section.find("strong")
+    if not strong or not strong.get_text().strip():
+        raise check50.Failure(
+            "Missing or empty <strong> element in the about section",
+            help="Add non-empty text inside <strong> (e.g. <strong>Developer</strong>)"
+        )
+
+    em = img_section.find("em")
+    if not em or not em.get_text().strip():
+        raise check50.Failure(
+            "Missing or empty <em> element in the about section",
+            help="Add non-empty text inside <em> (e.g. <em>passionate</em>)"
+        )
+
+    span = img_section.find("span")
+    if not span or not span.get_text().strip():
+        raise check50.Failure(
+            "Missing or empty <span> element in the about section",
+            help="Add non-empty text inside <span>"
+        )
+
     if not img_section.find("br"):
         raise check50.Failure("Missing <br> element in the about section")
 
 
 @check50.check(has_doctype)
 def test_skills_list():
-    """index.html has an unordered list (<ul>) with at least 5 skill items (<li>)"""
+    """index.html has an unordered list (<ul>) with at least 5 non-empty skill items (<li>)"""
     _check_tag_closed("index.html", "ul")
     _check_tag_closed("index.html", "li")
     html = _read("index.html")
@@ -154,17 +195,18 @@ def test_skills_list():
             help="Add an unordered list <ul> to present your skills"
         )
         
-    items = ul.find_all("li")
-    if len(items) < 5:
+    all_items = ul.find_all("li")
+    non_empty_items = [li for li in all_items if li.get_text().strip()]
+    if len(non_empty_items) < 5:
         raise check50.Failure(
-            f"Found {len(items)} item(s) in the unordered list, expected at least 5",
-            help="Add at least 5 skills as <li> items inside your <ul> list"
+            f"Found {len(non_empty_items)} non-empty <li> item(s) in <ul>, expected at least 5",
+            help="Add at least 5 skills with text inside <li> items inside your <ul> list"
         )
 
 
 @check50.check(has_doctype)
 def test_learning_plan():
-    """index.html has an ordered list (<ol>) with at least 4 learning steps (<li>)"""
+    """index.html has an ordered list (<ol>) with at least 4 non-empty learning steps (<li>)"""
     _check_tag_closed("index.html", "ol")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
@@ -175,17 +217,18 @@ def test_learning_plan():
             help="Add an ordered list <ol> to show your learning plan"
         )
         
-    items = ol.find_all("li")
-    if len(items) < 4:
+    all_items = ol.find_all("li")
+    non_empty_items = [li for li in all_items if li.get_text().strip()]
+    if len(non_empty_items) < 4:
         raise check50.Failure(
-            f"Found {len(items)} item(s) in the ordered list, expected at least 4",
-            help="Add at least 4 learning steps as <li> items inside your <ol> list"
+            f"Found {len(non_empty_items)} non-empty <li> item(s) in <ol>, expected at least 4",
+            help="Add at least 4 learning steps with text inside <li> items inside your <ol> list"
         )
 
 
 @check50.check(has_doctype)
 def test_footer():
-    """index.html has a <footer> containing copyright message"""
+    """index.html has a <footer> containing a copyright message with year and name"""
     _check_tag_closed("index.html", "footer")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
@@ -195,10 +238,28 @@ def test_footer():
             "Missing <footer> element",
             help="Add a <footer> element at the bottom of the body"
         )
-    text = footer.get_text().lower()
+        
+    text = footer.get_text().strip().lower()
     raw = str(footer).lower()
     has_sym = "copyright" in text or "©" in text or "&copy;" in raw or "&#169;" in raw
     if not has_sym:
         raise check50.Failure(
-            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)"
+            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)",
+            help="Add a copyright message inside <footer> using &copy; or © symbol"
+        )
+
+    # Check for year (e.g. 2025, 2026)
+    has_year = bool(re.search(r'\b(20\d{2}|19\d{2})\b', text))
+    if not has_year:
+        raise check50.Failure(
+            "<footer> is missing the copyright year (e.g. 2026)",
+            help="Include the year inside your <footer>, e.g. &copy; 2026 Your Name"
+        )
+
+    # Remove symbol & year to check for name/holder text
+    clean_text = re.sub(r'copyright|©|&copy;|&#169;|20\d{2}|19\d{2}', '', text).strip()
+    if len(clean_text) < 2:
+        raise check50.Failure(
+            "<footer> is missing your name or copyright holder text",
+            help="Include your name inside <footer>, e.g. &copy; 2026 Your Name"
         )

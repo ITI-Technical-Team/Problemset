@@ -21,6 +21,12 @@ def _check_tag_closed(filename, tag):
         )
 
 
+def _strip_js_comments(code):
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
+
+
 # ─── existence & structure ────────────────────────────────────────────────────
 
 @check50.check()
@@ -31,7 +37,7 @@ def exists():
 
 @check50.check(exists)
 def has_elements():
-    """index.html contains a heading, a button, and a script tag"""
+    """index.html contains a non-empty heading, a non-empty button, and a script tag"""
     _check_tag_closed("index.html", "html")
     _check_tag_closed("index.html", "body")
     _check_tag_closed("index.html", "script")
@@ -39,20 +45,20 @@ def has_elements():
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Check for heading
+    # Check for non-empty heading
     heading = soup.find(re.compile(r'^h[1-6]$', re.I))
-    if not heading:
+    if not heading or not heading.get_text().strip():
         raise check50.Failure(
-            "Missing heading tag",
+            "Missing or empty heading tag",
             help="Add a heading tag like <h1>Original Heading</h1> to index.html"
         )
 
-    # Check for button
+    # Check for non-empty button
     btn = soup.find("button")
-    if not btn:
+    if not btn or not btn.get_text().strip():
         raise check50.Failure(
-            "Missing button tag",
-            help="Add a <button> tag to index.html"
+            "Missing or empty button tag",
+            help="Add a <button>Change Heading</button> tag with text to index.html"
         )
 
     if not soup.find("script"):
@@ -64,15 +70,16 @@ def has_elements():
 
 @check50.check(has_elements)
 def checks_query_selector():
-    """JavaScript code uses querySelector to select the heading"""
+    """JavaScript code uses querySelector in active code to select the heading"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_raw = soup.find("script").string or ""
+    js_clean = _strip_js_comments(js_raw)
 
-    if "querySelector" not in js_raw:
+    if "querySelector" not in js_clean:
         raise check50.Failure(
-            "querySelector not found in script",
-            help="Ensure you select your heading using document.querySelector()"
+            "querySelector not found in active script",
+            help="Ensure you select your heading in active JavaScript code using document.querySelector()"
         )
 
 
