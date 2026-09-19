@@ -36,7 +36,12 @@ def test_compile():
     import subprocess as _sp
     _res = _sp.run("g++ -O1 -Wall -Wextra -Werror -fsanitize=bounds -fno-sanitize-recover=bounds -D_GLIBCXX_DEBUG length.cpp -o length", shell=True, capture_output=True, text=True)
     if _res.returncode != 0:
-        raise check50.Failure(_res.stderr or _res.stdout)
+        output = _res.stderr or _res.stdout
+        lines = output.splitlines()
+        if len(lines) > 20:
+            lines = lines[:10] + ["..."] + lines[-10:]
+        help_msg = "\n".join(lines)
+        raise check50.Failure("length.cpp failed to compile", help=help_msg)
 
 @check50.check(test_compile)
 def test_example1():
