@@ -35,7 +35,7 @@ def exists():
 
 @check50.check(exists)
 def checks_switch_statement():
-    """JavaScript code uses a switch statement"""
+    """JavaScript code uses a switch statement with break statements and default case"""
     code = _read("favorite-day.js")
     clean = _strip_js_comments(code)
 
@@ -43,6 +43,11 @@ def checks_switch_statement():
         raise check50.Failure(
             "Missing 'switch' statement",
             help="Use a switch statement to select the day name (e.g. switch(day) { ... })"
+        )
+    if "break" not in clean:
+        raise check50.Failure(
+            "Missing 'break' statements in switch cases",
+            help="Add 'break;' at the end of each switch case to prevent fallthrough to subsequent cases"
         )
     if "default" not in clean:
         raise check50.Failure(
@@ -53,7 +58,7 @@ def checks_switch_statement():
 
 @check50.check(checks_switch_statement)
 def test_valid_days():
-    """displays correct day name for inputs 1 to 7"""
+    """displays correct single day name for inputs 1 to 7"""
     code = _read("favorite-day.js")
     days_map = {
         1: "Sunday",
@@ -68,11 +73,24 @@ def test_valid_days():
         res = _run_test(code, val)
         if res.returncode != 0:
             raise check50.Failure("JavaScript execution error", help=res.stderr.strip())
-        out = res.stdout.strip().lower()
+        
+        output_lines = [l.strip() for l in res.stdout.strip().splitlines() if l.strip()]
+        if not output_lines:
+            raise check50.Failure(
+                f"No output for day {val}",
+                help=f"Expected output to print '{expected}' for day {val}"
+            )
+        if len(output_lines) > 1:
+            raise check50.Failure(
+                f"Multiple lines output for day {val}: {output_lines}",
+                help=f"Expected only '{expected}' to be printed for day {val}. Make sure each case ends with a 'break;' statement to prevent fallthrough!"
+            )
+            
+        out = output_lines[0].lower()
         if expected.lower() not in out:
             raise check50.Failure(
                 f"Incorrect output for day {val}",
-                help=f"Expected output to contain '{expected}' for day {val}, but got '{res.stdout.strip()}'"
+                help=f"Expected output to be '{expected}' for day {val}, but got '{output_lines[0]}'"
             )
 
 
@@ -86,7 +104,6 @@ def test_invalid_days():
             raise check50.Failure("JavaScript execution error", help=res.stderr.strip())
         out = res.stdout.strip().lower()
         
-        # Check that it outputted some default invalid error message and didn't output any valid weekday name
         if not out:
             raise check50.Failure(
                 f"No output for invalid day '{val}'",
