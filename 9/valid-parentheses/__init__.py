@@ -45,7 +45,7 @@ def test_examples_set1():
 @check50.check(test_compile)
 def test_examples_set2():
     """validates multiple sequences (Example set 2)"""
-    check50.run("./valid-parentheses").stdin("4\n)()(())\n()(((()\n(((())))\n(())(())", prompt=False).stdout("NO\nNO\nYES\nYES", regex=False).exit(0)
+    check50.run("./valid-parentheses").stdin("4\n)()(())\n()(((()\n(((())))\n(())(()))", prompt=False).stdout("NO\nNO\nYES\nNO", regex=False).exit(0)
 
 @check50.check(test_compile)
 def test_mixed_cases():
