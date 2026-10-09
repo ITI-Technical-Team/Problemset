@@ -231,17 +231,33 @@ def test_form():
 
 @check50.check(has_doctype)
 def test_footer():
-    """index.html has a <footer> with a copyright message"""
+    """index.html has a <footer> with a copyright message including year and name"""
     _check_tag_closed("index.html", "footer")
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     footer = soup.find("footer")
     if not footer:
         raise check50.Failure("Missing <footer> element")
-    text = footer.get_text().lower()
+    text = footer.get_text().strip().lower()
     raw = str(footer).lower()
     has_sym = "copyright" in text or "©" in text or "&copy;" in raw or "&#169;" in raw
     if not has_sym:
         raise check50.Failure(
-            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)"
+            "<footer> does not contain a copyright message or copyright symbol (&copy; or ©)",
+            help="Add a copyright message inside <footer> using &copy; or © symbol"
         )
+
+    has_year = bool(re.search(r'\b(20\d{2}|19\d{2})\b', text))
+    if not has_year:
+        raise check50.Failure(
+            "<footer> is missing the copyright year (e.g. 2026)",
+            help="Include the year inside your <footer>, e.g. &copy; 2026 Academy Name"
+        )
+
+    clean_text = re.sub(r'copyright|©|&copy;|&#169;|20\d{2}|19\d{2}', '', text).strip()
+    if len(clean_text) < 2:
+        raise check50.Failure(
+            "<footer> is missing your name or copyright holder text",
+            help="Include your name or academy name inside <footer>, e.g. &copy; 2026 Academy Name"
+        )
+
