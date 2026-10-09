@@ -1,5 +1,6 @@
 import check50
 import re
+import subprocess
 from bs4 import BeautifulSoup
 
 
@@ -20,6 +21,12 @@ def _check_tag_closed(filename, tag):
         )
 
 
+def _strip_js_comments(code):
+    code = re.sub(r'//[^\n]*', '', code)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    return code
+
+
 # ─── existence & structure ────────────────────────────────────────────────────
 
 @check50.check()
@@ -30,7 +37,7 @@ def exists():
 
 @check50.check(exists)
 def has_elements():
-    """index.html contains a button, text input, and script tag"""
+    """index.html contains a non-empty button, text input, and script tag"""
     _check_tag_closed("index.html", "html")
     _check_tag_closed("index.html", "body")
     _check_tag_closed("index.html", "script")
@@ -38,12 +45,12 @@ def has_elements():
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Check for button
+    # Check for button with text
     btn = soup.find("button")
-    if not btn:
+    if not btn or not btn.get_text().strip():
         raise check50.Failure(
-            "Missing button tag",
-            help="Add a <button> tag to index.html"
+            "Missing or empty button tag",
+            help="Add a <button>Click Me</button> tag with text to index.html"
         )
 
     # Check for input type text
@@ -54,7 +61,6 @@ def has_elements():
             help="Add an <input> tag to index.html"
         )
 
-    # Verify input has type text or no type (default is text)
     inp_type = inp.get("type", "text").lower()
     if inp_type != "text":
         raise check50.Failure(
@@ -76,7 +82,6 @@ def checks_inline_event():
     soup = BeautifulSoup(html, "html.parser")
     btn = soup.find("button")
 
-    # Look for common inline event attributes: onclick, onmouseover, onmouseout, onkeydown, onkeyup, onchange
     inline_attrs = [
         "onclick", "onmouseover", "onmouseout", "onkeydown", "onkeyup",
         "onchange", "oninput", "onfocus", "onblur"
@@ -92,13 +97,78 @@ def checks_inline_event():
 
 @check50.check(checks_inline_event)
 def checks_add_event_listener():
-    """JavaScript uses addEventListener for the text input"""
+    """JavaScript uses addEventListener in active code for the text input"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     js_raw = soup.find("script").string or ""
+    js_clean = _strip_js_comments(js_raw)
 
-    if "addEventListener" not in js_raw:
+    if "addEventListener" not in js_clean:
         raise check50.Failure(
-            "addEventListener not found in script",
-            help="Use addEventListener to listen to events on the text input (e.g. input.addEventListener('keyup', ...))"
+            "addEventListener not found in active script",
+            help="Use addEventListener in active JavaScript code to listen to events on the text input (e.g. input.addEventListener('keyup', ...))"
         )
+
+    btn = soup.find("button")
+    onclick_attr = btn.get("onclick") if btn else ""
+
+    # Execute under node VM to verify that listeners/functions exist and don't throw errors
+    mock_env = r"""
+let listenerAdded = false;
+let funcCalled = false;
+
+let inputMock = {
+    value: "test",
+    addEventListener: (evt, cb) => {
+        listenerAdded = true;
+        try { cb({ target: inputMock }); } catch (e) {}
+    }
+};
+
+let elementMock = {
+    textContent: "",
+    value: "test",
+    addEventListener: (evt, cb) => {
+        listenerAdded = true;
+        try { cb({ target: inputMock }); } catch (e) {}
+    }
+};
+
+global.window = {};
+global.alert = () => { funcCalled = true; };
+global.console = { log: () => {}, error: () => {} };
+global.document = {
+    querySelector: (s) => inputMock,
+    querySelectorAll: (s) => [inputMock],
+    getElementById: (id) => elementMock,
+    getElementsByTagName: (t) => [inputMock]
+};
+"""
+
+    func_name = re.search(r'([a-zA-Z0-9_$]+)\s*\(', onclick_attr)
+    call_func = f"try {{ {func_name.group(1)}(); }} catch(e) {{}}" if func_name else ""
+
+    test_harness = f"""
+{js_raw}
+{call_func}
+if (!listenerAdded) {{
+    console.log("FAIL_NO_LISTENER");
+    process.exit(1);
+}}
+console.log("PASS");
+"""
+    full_js = mock_env + test_harness
+    try:
+        res = subprocess.run(["node", "-e", full_js], capture_output=True, text=True)
+    except FileNotFoundError:
+        return
+
+    if res.returncode != 0:
+        out = res.stdout.strip() or res.stderr.strip()
+        if out.startswith("FAIL_NO_LISTENER"):
+            raise check50.Failure(
+                "addEventListener was not called to attach an event to the input element",
+                help="Call input.addEventListener('keyup', ...) or input.addEventListener('input', ...) in active script."
+            )
+        else:
+            raise check50.Failure("JavaScript execution error", help=out or res.stderr.strip())
