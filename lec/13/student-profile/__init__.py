@@ -28,7 +28,7 @@ def has_doctype():
 
 @check50.check(has_doctype)
 def test_html_structure():
-    """index.html contains required elements (div with id='profile', img, h1 with class='title', p, ol, link)"""
+    """index.html contains required non-empty elements (div with id='profile', valid img, h1 with class='title', p, ol, link)"""
     html = _read("index.html")
     soup = BeautifulSoup(html, "html.parser")
     
@@ -41,8 +41,22 @@ def test_html_structure():
         )
         
     img = profile.find("img")
-    if not img or not img.get("src", "").strip():
+    src = img.get("src", "").strip() if img else ""
+    if not img or not src:
         raise check50.Failure("Missing <img> or missing src attribute inside profile card")
+        
+    valid_exts = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".avif")
+    src_clean = src.split("?")[0].split("#")[0].lower()
+    is_img = (
+        src.startswith("data:image/") or
+        any(src_clean.endswith(ext) for ext in valid_exts) or
+        any(ext in src_clean for ext in valid_exts)
+    )
+    if not is_img or src.endswith("/") or re.search(r'\.(html?|php|asp|jsp)\b', src, re.I):
+        raise check50.Failure(
+            f"The <img> 'src' attribute '{src}' does not point to a valid image file",
+            help="Make sure src points to an image file (e.g. photo.jpg, avatar.png, or a valid image URL)."
+        )
         
     h1 = profile.find("h1")
     if not h1 or not h1.get_text().strip():
@@ -62,16 +76,21 @@ def test_html_structure():
     ol = profile.find("ol")
     if not ol:
         raise check50.Failure("Missing ordered list <ol> inside profile card")
-    items = ol.find_all("li")
+    items = [li for li in ol.find_all("li") if li.get_text().strip()]
     if len(items) < 2:
         raise check50.Failure(
-            f"Found {len(items)} item(s) in ordered list, expected at least 2",
-            help="Add your learning goals inside the <ol> list using <li> items"
+            f"Found {len(items)} non-empty item(s) in ordered list, expected at least 2",
+            help="Add your learning goals as text inside <li> items inside your <ol> list"
         )
         
     link = profile.find("a")
     if not link or not link.get("href", "").strip():
-        raise check50.Failure("Missing portfolio link <a> inside profile card")
+        raise check50.Failure("Missing portfolio link <a> or missing href attribute inside profile card")
+    if not link.get_text().strip():
+        raise check50.Failure(
+            "Found an empty portfolio link <a> inside profile card",
+            help="Add visible text to your portfolio link <a> tag"
+        )
 
 
 @check50.check(has_doctype)
@@ -86,19 +105,20 @@ def test_css_styling():
             help="Use Internal CSS by adding a `<style>` element inside the `<head>` section"
         )
         
-    css = style.get_text().lower()
+    # Strip CSS comments /* ... */ to prevent commented-out styles from passing
+    css = re.sub(r'/\*.*?\*/', '', style.get_text(), flags=re.DOTALL).lower()
     
     # Check ID selector
     if "#profile" not in css:
         raise check50.Failure(
-            "Missing ID selector '#profile' in CSS styles",
+            "Missing ID selector '#profile' in active CSS styles",
             help="Style your profile card container using `#profile` selector"
         )
         
     # Check Class selector
     if ".title" not in css:
         raise check50.Failure(
-            "Missing class selector '.title' in CSS styles",
+            "Missing class selector '.title' in active CSS styles",
             help="Style your student name heading using `.title` selector"
         )
         
@@ -106,22 +126,22 @@ def test_css_styling():
     for prop in ["width", "max-width", "margin", "padding", "background", "border"]:
         if prop not in css:
             raise check50.Failure(
-                f"Missing box model/layout property '{prop}' in CSS styles"
+                f"Missing box model/layout property '{prop}' in active CSS styles"
             )
             
     # Check general styling requirements
     if "color" not in css:
-        raise check50.Failure("Missing color declaration")
+        raise check50.Failure("Missing color declaration in active CSS")
     if "font-family" not in css:
-        raise check50.Failure("Missing font-family declaration")
+        raise check50.Failure("Missing font-family declaration in active CSS")
     if "font-size" not in css:
-        raise check50.Failure("Missing font-size declaration")
+        raise check50.Failure("Missing font-size declaration in active CSS")
     if "line-height" not in css:
-        raise check50.Failure("Missing line-height declaration")
+        raise check50.Failure("Missing line-height declaration in active CSS")
     if "letter-spacing" not in css:
-        raise check50.Failure("Missing letter-spacing declaration")
+        raise check50.Failure("Missing letter-spacing declaration in active CSS")
     if "text-align" not in css:
-        raise check50.Failure("Missing text-align declaration")
+        raise check50.Failure("Missing text-align declaration in active CSS")
         
     # Check hover selector
     if "hover" not in css:
